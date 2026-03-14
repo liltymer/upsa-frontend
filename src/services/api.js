@@ -5,7 +5,7 @@ import axios from "axios";
 // ================================
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000",
+  baseURL: "https://gradeiq-api.onrender.com",
   headers: {
     "Content-Type": "application/json",
   },
@@ -60,7 +60,7 @@ export const loginStudent = async (email, password) => {
   formData.append("password", password);
 
   const response = await axios.post(
-    "http://127.0.0.1:8000/auth/login",
+    "https://gradeiq-api.onrender.com/auth/login",
     formData
   );
 
@@ -91,13 +91,11 @@ export const getMyResults = async () => {
 };
 
 export const addResult = async (data) => {
-  // data: { course_code, course_name, credit_hours, grade, year, semester }
   const response = await API.post("/results/", data);
   return response.data;
 };
 
 export const updateResult = async (resultId, data) => {
-  // data: { grade }
   const response = await API.put(`/results/${resultId}`, data);
   return response.data;
 };
