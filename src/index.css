@@ -1,0 +1,286 @@
+@import "tailwindcss";
+
+/* ================================
+   BASE STYLES
+================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  background-color: #F5F7FF;
+  color: #081C46;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+/* ================================
+   ANIMATIONS
+================================ */
+
+@layer utilities {
+
+  .animate-fadeUp {
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .animate-fadeUp-1 {
+    animation: fadeUp 0.5s ease 0.1s forwards;
+    opacity: 0;
+  }
+
+  .animate-fadeUp-2 {
+    animation: fadeUp 0.5s ease 0.2s forwards;
+    opacity: 0;
+  }
+
+  .animate-fadeUp-3 {
+    animation: fadeUp 0.5s ease 0.3s forwards;
+    opacity: 0;
+  }
+
+  .animate-fadeUp-4 {
+    animation: fadeUp 0.5s ease 0.4s forwards;
+    opacity: 0;
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  .animate-slideIn {
+    animation: slideIn 0.3s ease forwards;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+}
+
+/* ================================
+   SCROLLBAR
+================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F5F7FF;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #081C46;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1a3a7a;
+}
+
+/* ================================
+   REUSABLE CLASSES
+================================ */
+
+.page-wrapper {
+  min-height: 100vh;
+  background-color: #F5F7FF;
+  padding: 24px;
+}
+
+.page-title {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: #081C46;
+}
+
+.section-title {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #081C46;
+  margin-bottom: 16px;
+}
+
+.card {
+  background: #ffffff;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(8, 28, 70, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 8px 24px rgba(8, 28, 70, 0.12);
+  transform: translateY(-2px);
+}
+
+.btn-primary {
+  background: #081C46;
+  color: #FFC005;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background: #1a3a7a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(8, 28, 70, 0.25);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-gold {
+  background: #FFC005;
+  color: #081C46;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-gold:hover {
+  background: #e6ad00;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(255, 192, 5, 0.35);
+}
+
+.btn-outline {
+  background: transparent;
+  color: #081C46;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 11px 24px;
+  border-radius: 10px;
+  border: 1.5px solid #081C46;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-outline:hover {
+  background: #081C46;
+  color: #FFC005;
+  transform: translateY(-1px);
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: "Inter", sans-serif;
+  color: #081C46;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field:focus {
+  border-color: #081C46;
+  box-shadow: 0 0 0 3px rgba(8, 28, 70, 0.08);
+}
+
+.input-field::placeholder {
+  color: #9CA3AF;
+}
+
+.label {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #081C46;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* ================================
+   TOAST NOTIFICATION
+================================ */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #081C46;
+  color: white;
+  padding: 14px 20px;
+  border-radius: 12px;
+  border-left: 4px solid #FFC005;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(8, 28, 70, 0.25);
+  animation: slideIn 0.3s ease forwards;
+  z-index: 1000;
+}
+
+.toast.success {
+  border-left-color: #10B981;
+}
+
+.toast.error {
+  border-left-color: #EF4444;
+}
