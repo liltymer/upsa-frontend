@@ -461,7 +461,7 @@ export default function Register() {
                     <label className="form-label">Full Name</label>
                     <input
                       type="text" name="name"
-                      placeholder="e.g. Joshua Owusu"
+                      placeholder="e.g. Ahenkora Joshua Owusu"
                       value={form.name}
                       onChange={handleChange}
                       required className="form-input"
@@ -472,7 +472,7 @@ export default function Register() {
                     <label className="form-label">Index Number</label>
                     <input
                       type="text" name="index_number"
-                      placeholder="e.g. 10324631"
+                      placeholder="e.g. 20260006"
                       value={form.index_number}
                       onChange={handleChange}
                       required className="form-input"
