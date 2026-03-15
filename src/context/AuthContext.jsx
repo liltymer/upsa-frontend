@@ -1,14 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 
-// ================================
-// CREATE CONTEXT
-// ================================
-
 const AuthContext = createContext(null);
-
-// ================================
-// AUTH PROVIDER
-// ================================
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem("token") || null);
@@ -17,33 +9,23 @@ export function AuthProvider({ children }) {
   );
   const [loading, setLoading] = useState(true);
 
-  // On mount — restore session from localStorage
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
-
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
     }
-
     setLoading(false);
   }, []);
 
-  // ================================
-  // LOGIN
-  // ================================
-
   const login = (accessToken, userData) => {
+    // userData now includes role — stored in localStorage
     localStorage.setItem("token", accessToken);
     localStorage.setItem("user", JSON.stringify(userData));
     setToken(accessToken);
     setUser(userData);
   };
-
-  // ================================
-  // LOGOUT
-  // ================================
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -51,10 +33,6 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
   };
-
-  // ================================
-  // IS AUTHENTICATED
-  // ================================
 
   const isAuthenticated = !!token;
 
@@ -73,10 +51,6 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
-
-// ================================
-// CUSTOM HOOK
-// ================================
 
 export function useAuth() {
   const context = useContext(AuthContext);

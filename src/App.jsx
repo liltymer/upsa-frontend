@@ -12,6 +12,12 @@ import Transcript from "./pages/Transcript";
 import Simulator from "./pages/Simulator";
 import Risk from "./pages/Risk";
 
+// Admin Pages
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
+import AdminAnnouncements from "./pages/AdminAnnouncements";
+import AdminCourses from "./pages/AdminCourses";
+
 // Components
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -52,14 +58,29 @@ function NotFound() {
   );
 }
 
+// ================================
+// ADMIN ROUTE GUARD
+// Redirects non-admins away from
+// admin pages silently
+// ================================
+function AdminRoute({ children }) {
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== "admin") return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
 export default function App() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+
+  // Admin pages have their own navbar — hide the student navbar
+  const isAdminPage = window.location.pathname.startsWith("/admin");
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-page)" }}>
 
-      {/* Navbar — only show when logged in */}
-      {isAuthenticated && <Navbar />}
+      {/* Navbar — only show when logged in and NOT on admin pages */}
+      {isAuthenticated && !isAdminPage && <Navbar />}
 
       <Routes>
 
@@ -83,13 +104,19 @@ export default function App() {
           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />}
         />
 
-        {/* Protected Routes */}
+        {/* Protected Student Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
         <Route path="/gpa" element={<ProtectedRoute><GPA /></ProtectedRoute>} />
         <Route path="/transcript" element={<ProtectedRoute><Transcript /></ProtectedRoute>} />
         <Route path="/simulator" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
         <Route path="/risk" element={<ProtectedRoute><Risk /></ProtectedRoute>} />
+
+        {/* Admin Routes — role-protected */}
+        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+        <Route path="/admin/announcements" element={<AdminRoute><AdminAnnouncements /></AdminRoute>} />
+        <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
