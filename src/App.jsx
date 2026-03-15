@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, Link } from "react-router-dom";
+import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
 // Pages
@@ -58,11 +58,6 @@ function NotFound() {
   );
 }
 
-// ================================
-// ADMIN ROUTE GUARD
-// Redirects non-admins away from
-// admin pages silently
-// ================================
 function AdminRoute({ children }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -72,9 +67,15 @@ function AdminRoute({ children }) {
 
 export default function App() {
   const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
 
-  // Admin pages have their own navbar — hide the student navbar
-  const isAdminPage = window.location.pathname.startsWith("/admin");
+  // Hide student navbar on admin pages
+  const isAdminPage = location.pathname.startsWith("/admin");
+
+  // Where to redirect after login based on role
+  const homeRoute = isAuthenticated
+    ? user?.role === "admin" ? "/admin" : "/dashboard"
+    : "/";
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-page)" }}>
@@ -84,12 +85,12 @@ export default function App() {
 
       <Routes>
 
-        {/* Landing page — root URL */}
+        {/* Landing — root URL */}
         <Route
           path="/"
           element={
             isAuthenticated
-              ? <Navigate to="/dashboard" replace />
+              ? <Navigate to={user?.role === "admin" ? "/admin" : "/dashboard"} replace />
               : <Landing />
           }
         />
@@ -97,11 +98,19 @@ export default function App() {
         {/* Public Routes */}
         <Route
           path="/login"
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
+          element={
+            isAuthenticated
+              ? <Navigate to={user?.role === "admin" ? "/admin" : "/dashboard"} replace />
+              : <Login />
+          }
         />
         <Route
           path="/register"
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />}
+          element={
+            isAuthenticated
+              ? <Navigate to={user?.role === "admin" ? "/admin" : "/dashboard"} replace />
+              : <Register />
+          }
         />
 
         {/* Protected Student Routes */}
@@ -112,7 +121,7 @@ export default function App() {
         <Route path="/simulator" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
         <Route path="/risk" element={<ProtectedRoute><Risk /></ProtectedRoute>} />
 
-        {/* Admin Routes — role-protected */}
+        {/* Admin Routes */}
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
         <Route path="/admin/announcements" element={<AdminRoute><AdminAnnouncements /></AdminRoute>} />

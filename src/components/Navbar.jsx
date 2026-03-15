@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const navItems = [
@@ -17,14 +17,12 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Add shadow on scroll
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close menu on route change
   const handleNavClick = () => setMenuOpen(false);
 
   const handleLogout = () => {
@@ -32,13 +30,14 @@ export default function Navbar() {
     navigate("/login");
   };
 
+  const isAdmin = user?.role === "admin";
+
   return (
     <>
       <nav style={{
         background: "var(--navy)",
         position: "sticky",
-        top: 0,
-        zIndex: 100,
+        top: 0, zIndex: 100,
         height: "var(--navbar-height)",
         boxShadow: scrolled
           ? "0 4px 24px rgba(8,28,70,0.3)"
@@ -46,49 +45,34 @@ export default function Navbar() {
         transition: "box-shadow 0.3s ease",
       }}>
         <div style={{
-          maxWidth: 1200,
-          margin: "0 auto",
-          padding: "0 32px",
-          height: "100%",
+          maxWidth: 1200, margin: "0 auto",
+          padding: "0 32px", height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: 16,
         }}>
 
-          {/* ================================
-              BRAND
-          ================================ */}
+          {/* BRAND */}
           <NavLink
             to="/dashboard"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexShrink: 0,
-              textDecoration: "none",
+              display: "flex", alignItems: "center",
+              gap: 10, flexShrink: 0, textDecoration: "none",
             }}
           >
-            {/* Logo — circular, no white box */}
             <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: "50%",
+              width: 36, height: 36, borderRadius: "50%",
               background: "rgba(255,192,5,0.12)",
               border: "1.5px solid rgba(255,192,5,0.3)",
-              display: "flex",
-              alignItems: "center",
+              display: "flex", alignItems: "center",
               justifyContent: "center",
-              padding: 5,
-              flexShrink: 0,
-              overflow: "hidden",
+              padding: 5, flexShrink: 0, overflow: "hidden",
             }}>
               <img
-                src="/upsa-logo.png"
-                alt="UPSA"
+                src="/upsa-logo.png" alt="UPSA"
                 style={{
-                  width: "100%",
-                  height: "100%",
+                  width: "100%", height: "100%",
                   objectFit: "contain",
                   filter: "brightness(1.2)",
                 }}
@@ -100,16 +84,13 @@ export default function Navbar() {
               <span style={{
                 display: "none",
                 fontFamily: "var(--font-heading)",
-                fontWeight: 900,
-                fontSize: 11,
+                fontWeight: 900, fontSize: 11,
                 color: "var(--gold)",
               }}>UP</span>
             </div>
-
             <span style={{
               fontFamily: "var(--font-heading)",
-              fontWeight: 800,
-              fontSize: 15,
+              fontWeight: 800, fontSize: 15,
               color: "var(--gold)",
               letterSpacing: "0.03em",
               whiteSpace: "nowrap",
@@ -118,17 +99,12 @@ export default function Navbar() {
             </span>
           </NavLink>
 
-          {/* ================================
-              DESKTOP NAV LINKS
-          ================================ */}
+          {/* DESKTOP NAV LINKS */}
           <div
             className="desktop-nav"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              flex: 1,
-              justifyContent: "center",
+              display: "flex", alignItems: "center",
+              gap: 2, flex: 1, justifyContent: "center",
             }}
           >
             {navItems.map((item) => (
@@ -153,26 +129,53 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* ================================
-              DESKTOP RIGHT — User + Logout
-          ================================ */}
+          {/* DESKTOP RIGHT */}
           <div
             className="desktop-nav"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              flexShrink: 0,
+              display: "flex", alignItems: "center",
+              gap: 10, flexShrink: 0,
             }}
           >
+            {/* Admin Panel button — only visible to admin */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                style={{
+                  padding: "7px 14px",
+                  borderRadius: "var(--radius-sm)",
+                  fontSize: 12,
+                  fontFamily: "var(--font-heading)",
+                  fontWeight: 700,
+                  color: "var(--gold)",
+                  textDecoration: "none",
+                  border: "1px solid rgba(255,192,5,0.3)",
+                  background: "rgba(255,192,5,0.08)",
+                  transition: "var(--transition)",
+                  whiteSpace: "nowrap",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--gold)";
+                  e.currentTarget.style.color = "var(--navy)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255,192,5,0.08)";
+                  e.currentTarget.style.color = "var(--gold)";
+                }}
+              >
+                ⚙️ Admin
+              </Link>
+            )}
+
             {user && (
               <div style={{ textAlign: "right" }}>
                 <p style={{
                   fontFamily: "var(--font-heading)",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  color: "white",
-                  lineHeight: 1.2,
+                  fontWeight: 600, fontSize: 13,
+                  color: "white", lineHeight: 1.2,
                   maxWidth: 160,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -188,6 +191,7 @@ export default function Navbar() {
                 </p>
               </div>
             )}
+
             <button
               onClick={handleLogout}
               className="btn btn-ghost btn-sm"
@@ -205,75 +209,51 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* ================================
-              MOBILE HAMBURGER
-          ================================ */}
+          {/* MOBILE HAMBURGER */}
           <button
             className="mobile-nav"
             onClick={() => setMenuOpen(!menuOpen)}
             style={{
-              display: "none",
-              flexDirection: "column",
-              gap: 5,
-              background: "none",
-              border: "none",
-              padding: 6,
-              cursor: "pointer",
-              flexShrink: 0,
+              display: "none", flexDirection: "column",
+              gap: 5, background: "none", border: "none",
+              padding: 6, cursor: "pointer", flexShrink: 0,
             }}
             aria-label="Toggle menu"
           >
             <span style={{
-              display: "block",
-              width: 22, height: 2,
-              background: "var(--gold)",
-              borderRadius: 999,
+              display: "block", width: 22, height: 2,
+              background: "var(--gold)", borderRadius: 999,
               transition: "all 0.3s",
-              transform: menuOpen
-                ? "rotate(45deg) translate(5px, 5px)"
-                : "none",
+              transform: menuOpen ? "rotate(45deg) translate(5px, 5px)" : "none",
             }} />
             <span style={{
-              display: "block",
-              width: 22, height: 2,
-              background: "var(--gold)",
-              borderRadius: 999,
+              display: "block", width: 22, height: 2,
+              background: "var(--gold)", borderRadius: 999,
               transition: "all 0.3s",
               opacity: menuOpen ? 0 : 1,
             }} />
             <span style={{
-              display: "block",
-              width: 22, height: 2,
-              background: "var(--gold)",
-              borderRadius: 999,
+              display: "block", width: 22, height: 2,
+              background: "var(--gold)", borderRadius: 999,
               transition: "all 0.3s",
-              transform: menuOpen
-                ? "rotate(-45deg) translate(5px, -5px)"
-                : "none",
+              transform: menuOpen ? "rotate(-45deg) translate(5px, -5px)" : "none",
             }} />
           </button>
 
         </div>
       </nav>
 
-      {/* ================================
-          MOBILE DROPDOWN MENU
-      ================================ */}
+      {/* MOBILE DROPDOWN */}
       {menuOpen && (
         <div
           className="mobile-nav"
           style={{
-            display: "flex",
-            position: "fixed",
-            top: "var(--navbar-height)",
-            left: 0,
-            right: 0,
+            display: "flex", position: "fixed",
+            top: "var(--navbar-height)", left: 0, right: 0,
             background: "#0f2d6e",
             borderBottom: "1px solid rgba(255,255,255,0.08)",
             flexDirection: "column",
-            padding: "16px",
-            gap: 4,
-            zIndex: 99,
+            padding: "16px", gap: 4, zIndex: 99,
             animation: "fadeIn 0.2s ease forwards",
             boxShadow: "0 8px 32px rgba(8,28,70,0.4)",
           }}
@@ -299,39 +279,69 @@ export default function Navbar() {
             </NavLink>
           ))}
 
+          {/* Admin link in mobile menu */}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              onClick={handleNavClick}
+              style={{
+                padding: "12px 16px",
+                borderRadius: "var(--radius-sm)",
+                fontSize: 14,
+                fontWeight: 700,
+                fontFamily: "var(--font-heading)",
+                textDecoration: "none",
+                background: "rgba(255,192,5,0.1)",
+                color: "var(--gold)",
+                border: "1px solid rgba(255,192,5,0.2)",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              ⚙️ Admin Panel
+            </Link>
+          )}
+
           {/* Mobile user info + logout */}
           <div style={{
             borderTop: "1px solid rgba(255,255,255,0.08)",
-            paddingTop: 16,
-            marginTop: 8,
+            paddingTop: 16, marginTop: 8,
           }}>
             {user && (
               <p style={{
-                color: "rgba(255,255,255,0.4)",
-                fontSize: 12,
+                color: "rgba(255,255,255,0.4)", fontSize: 12,
                 fontFamily: "var(--font-heading)",
-                marginBottom: 10,
-                paddingLeft: 4,
+                marginBottom: 10, paddingLeft: 4,
               }}>
                 Signed in as{" "}
                 <span style={{ color: "var(--gold)", fontWeight: 600 }}>
                   {user.name}
                 </span>
+                {isAdmin && (
+                  <span style={{
+                    marginLeft: 6,
+                    background: "rgba(255,192,5,0.15)",
+                    color: "var(--gold)",
+                    fontSize: 10,
+                    padding: "2px 8px",
+                    borderRadius: "var(--radius-full)",
+                    fontWeight: 700,
+                  }}>
+                    ADMIN
+                  </span>
+                )}
               </p>
             )}
             <button
               onClick={handleLogout}
               style={{
-                width: "100%",
-                padding: "12px 16px",
-                background: "#EF4444",
-                color: "white",
+                width: "100%", padding: "12px 16px",
+                background: "#EF4444", color: "white",
                 fontFamily: "var(--font-heading)",
-                fontWeight: 700,
-                fontSize: 14,
+                fontWeight: 700, fontSize: 14,
                 borderRadius: "var(--radius-sm)",
-                border: "none",
-                cursor: "pointer",
+                border: "none", cursor: "pointer",
                 transition: "var(--transition)",
               }}
             >
@@ -341,25 +351,19 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Overlay to close menu */}
+      {/* Overlay */}
       {menuOpen && (
         <div
           className="mobile-nav"
           onClick={() => setMenuOpen(false)}
           style={{
-            display: "block",
-            position: "fixed",
-            inset: 0,
-            top: "var(--navbar-height)",
-            background: "rgba(0,0,0,0.4)",
-            zIndex: 98,
+            display: "block", position: "fixed",
+            inset: 0, top: "var(--navbar-height)",
+            background: "rgba(0,0,0,0.4)", zIndex: 98,
           }}
         />
       )}
 
-      {/* ================================
-          RESPONSIVE STYLES
-      ================================ */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-8px); }
