@@ -28,8 +28,17 @@ export default function Login() {
         index_number: userData.index_number,
         cgpa: userData.cgpa,
         classification: userData.classification,
+        role: userData.role,
+        academic_year: userData.academic_year,
+        programme: userData.programme,
+        level: userData.level,
       });
-      navigate("/dashboard");
+      // Redirect admin to admin panel, students to dashboard
+      if (userData.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       setError(err.response?.data?.detail || "Invalid email or password.");
     } finally {
@@ -87,7 +96,7 @@ export default function Login() {
           textAlign: "center", width: "100%", maxWidth: 380,
         }} className="fade-up">
 
-          {/* Logo — circular, no white box */}
+          {/* Logo */}
           <div style={{
             width: 108, height: 108,
             borderRadius: "50%",
