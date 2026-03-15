@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, Link } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
 // Pages
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -18,14 +19,32 @@ import ProtectedRoute from "./components/ProtectedRoute";
 function NotFound() {
   const { isAuthenticated } = useAuth();
   return (
-    <div className="min-h-screen bg-light-bg flex flex-col items-center justify-center gap-4">
-      <p className="font-heading font-extrabold text-6xl text-navy">404</p>
-      <p className="font-heading font-semibold text-lg" style={{ color: "rgba(8,28,70,0.6)" }}>
+    <div style={{
+      minHeight: "100vh",
+      background: "var(--bg-page)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 16,
+      fontFamily: "var(--font-body)",
+    }}>
+      <p style={{
+        fontFamily: "var(--font-heading)",
+        fontWeight: 900, fontSize: 80,
+        color: "var(--navy)", lineHeight: 1,
+      }}>404</p>
+      <p style={{
+        fontFamily: "var(--font-heading)",
+        fontWeight: 600, fontSize: 18,
+        color: "var(--text-secondary)",
+      }}>
         Page not found
       </p>
       <Link
-        to={isAuthenticated ? "/dashboard" : "/login"}
-        className="btn-primary mt-4"
+        to={isAuthenticated ? "/dashboard" : "/"}
+        className="btn btn-primary"
+        style={{ marginTop: 8 }}
       >
         Go Home
       </Link>
@@ -37,86 +56,40 @@ export default function App() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen bg-light-bg">
+    <div style={{ minHeight: "100vh", background: "var(--bg-page)" }}>
 
       {/* Navbar — only show when logged in */}
       {isAuthenticated && <Navbar />}
 
       <Routes>
 
+        {/* Landing page — root URL */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated
+              ? <Navigate to="/dashboard" replace />
+              : <Landing />
+          }
+        />
+
         {/* Public Routes */}
         <Route
           path="/login"
           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
         />
-
         <Route
           path="/register"
           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />}
         />
 
         {/* Protected Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/results"
-          element={
-            <ProtectedRoute>
-              <Results />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/gpa"
-          element={
-            <ProtectedRoute>
-              <GPA />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/transcript"
-          element={
-            <ProtectedRoute>
-              <Transcript />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/simulator"
-          element={
-            <ProtectedRoute>
-              <Simulator />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/risk"
-          element={
-            <ProtectedRoute>
-              <Risk />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Default redirect */}
-        <Route
-          path="/"
-          element={
-            <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
-          }
-        />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
+        <Route path="/gpa" element={<ProtectedRoute><GPA /></ProtectedRoute>} />
+        <Route path="/transcript" element={<ProtectedRoute><Transcript /></ProtectedRoute>} />
+        <Route path="/simulator" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
+        <Route path="/risk" element={<ProtectedRoute><Risk /></ProtectedRoute>} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
