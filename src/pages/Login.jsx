@@ -190,7 +190,6 @@ export default function Login() {
             gap: 10, marginBottom: 40,
           }}>
             {[
-              { icon: "📊", label: "GPA Tracker", desc: "Every semester" },
               { icon: "⚡", label: "Risk Alerts", desc: "Live analysis" },
               { icon: "📄", label: "PDF Transcript", desc: "Download anytime" },
               { icon: "🎯", label: "CGPA Simulator", desc: "Plan ahead" },
@@ -336,7 +335,7 @@ export default function Login() {
               marginBottom: 6,
               letterSpacing: "-0.02em",
             }}>
-              Welcome back 👋
+              Welcome back 
             </h2>
             <p style={{
               color: "var(--text-muted)",
@@ -357,7 +356,7 @@ export default function Login() {
               {/* Email */}
               <div className="form-group" style={{ marginBottom: 18 }}>
                 <label className="form-label">
-                  ✉️ Email Address
+                   Email Address
                 </label>
                 <input
                   type="email"
@@ -373,7 +372,7 @@ export default function Login() {
               {/* Password */}
               <div className="form-group" style={{ marginBottom: 28 }}>
                 <label className="form-label">
-                  🔒 Password
+                   Password
                 </label>
                 <input
                   type="password"
@@ -385,6 +384,23 @@ export default function Login() {
                   className="form-input"
                 />
               </div>
+
+              <div style={{
+  textAlign: "right", marginTop: -20, marginBottom: 28,
+}}>
+  <Link to="/forgot-password" style={{
+    fontSize: 12,
+    color: "var(--text-muted)",
+    fontFamily: "var(--font-heading)",
+    fontWeight: 600,
+    textDecoration: "none",
+    borderBottom: "1px solid var(--border)",
+    paddingBottom: 1,
+    transition: "var(--transition)",
+  }}>
+    Forgot password?
+  </Link>
+</div>
 
               {/* Submit */}
               <button

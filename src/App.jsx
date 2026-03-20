@@ -11,6 +11,8 @@ import GPA from "./pages/GPA";
 import Transcript from "./pages/Transcript";
 import Simulator from "./pages/Simulator";
 import Risk from "./pages/Risk";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // Admin Pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -126,6 +128,10 @@ export default function App() {
         <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
         <Route path="/admin/announcements" element={<AdminRoute><AdminAnnouncements /></AdminRoute>} />
         <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
+
+          {/* Password Reset Routes */}
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
