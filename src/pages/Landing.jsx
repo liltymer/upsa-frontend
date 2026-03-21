@@ -83,12 +83,13 @@ function LandingHelpButton() {
   );
 }
 
-export default function Landing() {
+function LandingNav() {
+  const [menuOpen, setMenuOpen] = React.useState(false);
   return (
-    <div style={{ minHeight: "100vh", fontFamily: "var(--font-body)", background: "var(--bg-page)", overflowX: "hidden" }}>
-
+    <>
       <nav style={{ background: "var(--navy)", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(8,28,70,0.2)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,192,5,0.12)", border: "1.5px solid rgba(255,192,5,0.3)", display: "flex", alignItems: "center", justifyContent: "center", padding: 5, overflow: "hidden" }}>
               <img src="/upsa-logo.png" alt="UPSA" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(1.2)" }} onError={(e) => { e.target.style.display = "none"; }} />
@@ -98,14 +99,58 @@ export default function Landing() {
               <p style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "var(--font-heading)", letterSpacing: "0.08em" }}>Smart Academic Platform</p>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+
+          <div className="landing-desktop-nav" style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <a href="#how-it-works" style={{ padding: "7px 14px", fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 12, color: "rgba(255,255,255,0.5)", textDecoration: "none" }}>How it Works</a>
             <a href="#support" style={{ padding: "7px 14px", fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 12, color: "rgba(255,255,255,0.5)", textDecoration: "none" }}>Support</a>
             <Link to="/login" style={{ padding: "7px 16px", fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 13, color: "rgba(255,255,255,0.7)", textDecoration: "none" }}>Sign In</Link>
             <Link to="/register" className="btn btn-gold btn-sm">Get Started</Link>
           </div>
+
+          <button
+            className="landing-mobile-hamburger"
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{ display: "none", flexDirection: "column", gap: 5, background: "none", border: "none", padding: 6, cursor: "pointer" }}
+          >
+            <span style={{ display: "block", width: 22, height: 2, background: "var(--gold)", borderRadius: 999, transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
+            <span style={{ display: "block", width: 22, height: 2, background: "var(--gold)", borderRadius: 999, transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
+            <span style={{ display: "block", width: 22, height: 2, background: "var(--gold)", borderRadius: 999, transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
+          </button>
+
         </div>
       </nav>
+
+      {menuOpen && (
+        <div className="landing-mobile-hamburger" style={{
+          display: "flex", position: "fixed",
+          top: 64, left: 0, right: 0,
+          background: "#0f2d6e",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          flexDirection: "column",
+          padding: "16px", gap: 4, zIndex: 99,
+          boxShadow: "0 8px 32px rgba(8,28,70,0.4)",
+        }}>
+          <a href="#how-it-works" onClick={() => setMenuOpen(false)} style={{ padding: "12px 16px", borderRadius: "var(--radius-sm)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-heading)", textDecoration: "none", color: "rgba(255,255,255,0.7)" }}>How it Works</a>
+          <a href="#support" onClick={() => setMenuOpen(false)} style={{ padding: "12px 16px", borderRadius: "var(--radius-sm)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-heading)", textDecoration: "none", color: "rgba(255,255,255,0.7)" }}>Support</a>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 12, marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+            <Link to="/login" onClick={() => setMenuOpen(false)} style={{ padding: "12px 16px", borderRadius: "var(--radius-sm)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-heading)", textDecoration: "none", color: "rgba(255,255,255,0.7)", background: "rgba(255,255,255,0.05)", textAlign: "center" }}>Sign In</Link>
+            <Link to="/register" onClick={() => setMenuOpen(false)} className="btn btn-gold" style={{ textAlign: "center", borderRadius: "var(--radius-sm)", padding: "12px 16px", fontSize: 14 }}>Create Free Account</Link>
+          </div>
+        </div>
+      )}
+
+      {menuOpen && (
+        <div className="landing-mobile-hamburger" onClick={() => setMenuOpen(false)} style={{ display: "block", position: "fixed", inset: 0, top: 64, background: "rgba(0,0,0,0.4)", zIndex: 98 }} />
+      )}
+    </>
+  );
+}
+
+export default function Landing() {
+  return (
+    <div style={{ minHeight: "100vh", fontFamily: "var(--font-body)", background: "var(--bg-page)", overflowX: "hidden" }}>
+
+      <LandingNav />
 
       <div style={{ background: "linear-gradient(160deg, #060f2e 0%, var(--navy) 60%, #0a2050 100%)", padding: "100px 32px 120px", position: "relative", overflow: "hidden", textAlign: "center" }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, transparent, var(--gold), transparent)" }} />
@@ -132,7 +177,7 @@ export default function Landing() {
               { value: "9", label: "Grade Types" },
               { value: "UPSA", label: "Official Scale" },
             ].map((stat, i) => (
-              <div key={stat.label} style={{ textAlign: "center", padding: "0 32px", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
+              <div key={stat.label} style={{ textAlign: "center", padding: "0 24px", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
                 <p style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(24px, 3vw, 32px)", color: "var(--gold)", lineHeight: 1, marginBottom: 6 }}>{stat.value}</p>
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "var(--font-heading)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em" }}>{stat.label}</p>
               </div>
@@ -311,7 +356,13 @@ export default function Landing() {
       <LandingHelpButton />
 
       <style>{`
+        @media (min-width: 769px) {
+          .landing-desktop-nav { display: flex !important; }
+          .landing-mobile-hamburger { display: none !important; }
+        }
         @media (max-width: 768px) {
+          .landing-desktop-nav { display: none !important; }
+          .landing-mobile-hamburger { display: flex !important; }
           .support-grid { grid-template-columns: 1fr !important; }
           .footer-grid { grid-template-columns: 1fr !important; }
         }
