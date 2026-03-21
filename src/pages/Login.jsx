@@ -73,7 +73,7 @@ export default function Login() {
           <div style={{ width: 40, height: 3, background: "linear-gradient(90deg, var(--gold), var(--gold-deep))", borderRadius: 999, margin: "0 auto 20px" }} />
 
           <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, lineHeight: 1.8, maxWidth: 300, margin: "0 auto 36px" }}>
-            Track your CGPA, simulate future grades, analyse risk and download your transcript — all in one intelligent platform.
+            Track your CGPA, simulate future grades, analyse risk and download your transcript all in one intelligent platform.
           </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 40 }}>
@@ -127,7 +127,7 @@ export default function Login() {
             <form onSubmit={handleSubmit}>
               <div className="form-group" style={{ marginBottom: 18 }}>
                 <label className="form-label">Email Address</label>
-                <input type="email" name="email" placeholder="you@upsamail.edu.gh" value={form.email} onChange={handleChange} required className="form-input" />
+                <input type="email" name="email" placeholder="you@gmail.com" value={form.email} onChange={handleChange} required className="form-input" />
               </div>
 
               <div className="form-group" style={{ marginBottom: 12 }}>
