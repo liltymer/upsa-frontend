@@ -13,6 +13,7 @@ import Simulator from "./pages/Simulator";
 import Risk from "./pages/Risk";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
 
 // Admin Pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -122,6 +123,7 @@ export default function App() {
         <Route path="/transcript" element={<ProtectedRoute><Transcript /></ProtectedRoute>} />
         <Route path="/simulator" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
         <Route path="/risk" element={<ProtectedRoute><Risk /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
