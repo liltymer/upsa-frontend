@@ -175,7 +175,7 @@ export default function Register() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                     <label className="form-label">Full Name</label>
-                    <input type="text" name="name" placeholder="e.g. Ahenkora Joshua Owusu" value={form.name} onChange={handleChange} required className="form-input" />
+                    <input type="text" name="name" placeholder="e.g. Micheal Scofield" value={form.name} onChange={handleChange} required className="form-input" />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Index Number</label>
@@ -183,7 +183,7 @@ export default function Register() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Email Address</label>
-                    <input type="email" name="email" placeholder="you@upsamail.edu.gh" value={form.email} onChange={handleChange} required className="form-input" />
+                    <input type="email" name="email" placeholder="you@gmail.com" value={form.email} onChange={handleChange} required className="form-input" />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Password</label>
