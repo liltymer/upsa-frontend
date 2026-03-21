@@ -24,19 +24,18 @@ const faqs = [
 ];
 
 const features = [
-  { title: "CGPA Tracker", desc: "Track your cumulative GPA across every semester with real-time updates and visual progress indicators.", color: "var(--blue-bg)", border: "var(--blue-border)", iconColor: "var(--blue)" },
-  { title: "Risk Analysis", desc: "Get instant alerts when your academic standing is at risk before it is too late to act.", color: "var(--amber-bg)", border: "var(--amber-border)", iconColor: "var(--amber)" },
-  { title: "PDF Transcript", desc: "Generate and download a formatted academic transcript of all your results at any time.", color: "var(--green-bg)", border: "var(--green-border)", iconColor: "var(--green)" },
-  { title: "CGPA Simulator", desc: "Simulate future grades and calculate exactly what you need to reach your target classification.", color: "#FDF4FF", border: "#E9D5FF", iconColor: "#7C3AED" },
-  { title: "GPA Trends", desc: "Visualise your academic performance over time with an interactive semester-by-semester chart.", color: "var(--orange-bg)", border: "var(--orange-border)", iconColor: "var(--orange)" },
-  { title: "Classification Ladder", desc: "See exactly where you stand on the UPSA classification scale and how far you are from First Class.", color: "var(--red-bg)", border: "var(--red-border)", iconColor: "var(--red)" },
+  { title: "CGPA Tracker", desc: "Track your cumulative GPA across every semester with real-time updates and visual progress indicators.", color: "var(--blue-bg)", border: "var(--blue-border)", iconColor: "var(--blue)", abbr: "GPA" },
+  { title: "Risk Analysis", desc: "Get instant alerts when your academic standing is at risk before it is too late to act.", color: "var(--amber-bg)", border: "var(--amber-border)", iconColor: "var(--amber)", abbr: "RISK" },
+  { title: "PDF Transcript", desc: "Generate and download a formatted academic transcript of all your results at any time.", color: "var(--green-bg)", border: "var(--green-border)", iconColor: "var(--green)", abbr: "PDF" },
+  { title: "CGPA Simulator", desc: "Simulate future grades and calculate exactly what you need to reach your target classification.", color: "#FDF4FF", border: "#E9D5FF", iconColor: "#7C3AED", abbr: "SIM" },
+  { title: "GPA Trends", desc: "Visualise your academic performance over time with an interactive semester-by-semester chart.", color: "var(--orange-bg)", border: "var(--orange-border)", iconColor: "var(--orange)", abbr: "TREND" },
+  { title: "Classification Ladder", desc: "See exactly where you stand on the UPSA classification scale and how far you are from First Class.", color: "var(--red-bg)", border: "var(--red-border)", iconColor: "var(--red)", abbr: "CLASS" },
 ];
 
 export default function Landing() {
   return (
     <div style={{ minHeight: "100vh", fontFamily: "var(--font-body)", background: "var(--bg-page)", overflowX: "hidden" }}>
 
-      {/* NAVBAR */}
       <nav style={{ background: "var(--navy)", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(8,28,70,0.2)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -57,7 +56,6 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* HERO */}
       <div style={{ background: "linear-gradient(160deg, #060f2e 0%, var(--navy) 60%, #0a2050 100%)", padding: "100px 32px 120px", position: "relative", overflow: "hidden", textAlign: "center" }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, transparent, var(--gold), transparent)" }} />
         <div style={{ position: "relative", zIndex: 10, maxWidth: 760, margin: "0 auto" }} className="fade-up">
@@ -92,7 +90,6 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* FEATURES */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "96px 32px" }}>
         <div style={{ textAlign: "center", marginBottom: 64 }}>
           <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: 16 }}>Platform Features</p>
@@ -110,13 +107,8 @@ export default function Landing() {
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "var(--shadow-lg)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "var(--shadow-sm)"; }}
             >
-              <div style={{ width: 48, height: 48, borderRadius: "var(--radius-md)", background: f.color, display: "flex", alignItems: "center", justifyContent: "center", color: f.iconColor, marginBottom: 18, fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 20 }}>
-                {i === 0 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>}
-                {i === 1 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
-                {i === 2 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>}
-                {i === 3 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>}
-                {i === 4 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>}
-                {i === 5 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17,11 12,6 7,11"/><polyline points="17,18 12,13 7,18"/></svg>}
+              <div style={{ width: 48, height: 48, borderRadius: "var(--radius-md)", background: f.color, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 11, color: f.iconColor, letterSpacing: "0.05em" }}>{f.abbr}</span>
               </div>
               <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16, color: "var(--navy)", marginBottom: 8 }}>{f.title}</h3>
               <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>{f.desc}</p>
@@ -125,7 +117,6 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* CLASSIFICATION */}
       <div style={{ background: "linear-gradient(135deg, #060f2e 0%, var(--navy) 100%)", padding: "96px 32px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
@@ -151,7 +142,6 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* HOW IT WORKS */}
       <div id="how-it-works" style={{ maxWidth: 1200, margin: "0 auto", padding: "96px 32px" }}>
         <div style={{ textAlign: "center", marginBottom: 64 }}>
           <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: 16 }}>Simple to Use</p>
@@ -176,7 +166,6 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* SUPPORT */}
       <div id="support" style={{ background: "var(--bg-card)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "96px 32px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }} className="support-grid">
           <div>
@@ -224,7 +213,6 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* CTA */}
       <div style={{ background: "linear-gradient(135deg, #060f2e 0%, var(--navy) 100%)", padding: "96px 32px", textAlign: "center" }}>
         <div style={{ position: "relative", zIndex: 10, maxWidth: 600, margin: "0 auto" }} className="fade-up">
           <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(32px, 5vw, 52px)", color: "white", marginBottom: 16, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
@@ -235,7 +223,6 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* FOOTER */}
       <div style={{ background: "#060f2e", padding: "48px 32px 32px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 40, marginBottom: 48, paddingBottom: 40, borderBottom: "1px solid rgba(255,255,255,0.06)" }} className="footer-grid">
