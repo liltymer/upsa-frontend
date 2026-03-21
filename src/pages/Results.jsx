@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getMyResults, addResult, updateResult, deleteResult } from "../services/api";
+import API from "../services/api";
 
 const GRADE_OPTIONS = ["A", "B+", "B", "B-", "C+", "C", "C-", "D", "F"];
 const GRADE_POINTS = {
@@ -18,6 +19,7 @@ const gradeClass = (grade) => {
 
 export default function Results() {
   const [results, setResults] = useState([]);
+  const [catalogue, setCatalogue] = useState([]);
   const [studentInfo, setStudentInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -25,6 +27,7 @@ export default function Results() {
   const [editingId, setEditingId] = useState(null);
   const [editGrade, setEditGrade] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [inputMode, setInputMode] = useState("manual"); // "catalogue" or "manual"
   const [form, setForm] = useState({
     course_code: "", course_name: "",
     credit_hours: "3", grade: "",
@@ -52,7 +55,43 @@ export default function Results() {
     }
   };
 
-  useEffect(() => { fetchResults(); }, []);
+  const fetchCatalogue = async () => {
+    try {
+      const res = await API.get("/courses/");
+      setCatalogue(res.data || []);
+    } catch {
+      // Catalogue is optional — fail silently
+    }
+  };
+
+  useEffect(() => {
+    fetchResults();
+    fetchCatalogue();
+  }, []);
+
+  const handleCatalogueSelect = (e) => {
+    const courseId = e.target.value;
+    if (!courseId) {
+      setForm({ ...form, course_code: "", course_name: "", credit_hours: "3" });
+      return;
+    }
+    const selected = catalogue.find((c) => String(c.id) === courseId);
+    if (selected) {
+      setForm({
+        ...form,
+        course_code: selected.code,
+        course_name: selected.name,
+        credit_hours: String(selected.credit_hours),
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setForm({
+      course_code: "", course_name: "",
+      credit_hours: "3", grade: "", year: "", semester: "",
+    });
+  };
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -66,13 +105,10 @@ export default function Results() {
         year: Number(form.year),
         semester: Number(form.semester),
       });
-      setForm({
-        course_code: "", course_name: "",
-        credit_hours: "3", grade: "", year: "", semester: "",
-      });
+      resetForm();
       setShowForm(false);
       await fetchResults();
-      showToast("Result added successfully!");
+      showToast("Result added successfully.");
     } catch (err) {
       showToast(err.response?.data?.detail || "Failed to add result.", "error");
     } finally {
@@ -87,7 +123,7 @@ export default function Results() {
       setEditingId(null);
       setEditGrade("");
       await fetchResults();
-      showToast("Result updated successfully!");
+      showToast("Result updated successfully.");
     } catch (err) {
       showToast(err.response?.data?.detail || "Failed to update.", "error");
     }
@@ -98,7 +134,7 @@ export default function Results() {
     try {
       await deleteResult(resultId);
       await fetchResults();
-      showToast("Result deleted.", "error");
+      showToast("Result deleted.");
     } catch {
       showToast("Failed to delete result.", "error");
     }
@@ -133,8 +169,7 @@ export default function Results() {
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "space-between",
-          gap: 16,
-          flexWrap: "wrap",
+          gap: 16, flexWrap: "wrap",
         }}>
           <div className="fade-up">
             <p className="page-eyebrow">Academic Records</p>
@@ -143,8 +178,7 @@ export default function Results() {
               <div style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
-                flexWrap: "wrap",
+                gap: 8, flexWrap: "wrap",
                 marginTop: 8,
               }}>
                 <span className="badge badge-navy">
@@ -161,8 +195,7 @@ export default function Results() {
                   Level {studentInfo.level}
                 </span>
                 <span style={{
-                  color: "rgba(255,255,255,0.3)",
-                  fontSize: 12,
+                  color: "rgba(255,255,255,0.3)", fontSize: 12,
                 }}>
                   {results.length} result{results.length !== 1 ? "s" : ""}
                 </span>
@@ -171,11 +204,14 @@ export default function Results() {
           </div>
 
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              setShowForm(!showForm);
+              resetForm();
+            }}
             className={`btn ${showForm ? "btn-ghost" : "btn-gold"}`}
             style={{ flexShrink: 0, marginTop: 4 }}
           >
-            {showForm ? "✕ Cancel" : "+ Add Result"}
+            {showForm ? "Cancel" : "+ Add Result"}
           </button>
         </div>
       </div>
@@ -194,18 +230,142 @@ export default function Results() {
                   Add New Result
                 </h3>
                 <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                  Enter your course details exactly as shown on your result sheet
+                  Enter your course details exactly as shown on your result sheet.
                 </p>
               </div>
 
+              {/* Input mode toggle */}
+              <div style={{
+                display: "flex",
+                gap: 8,
+                marginBottom: 20,
+                padding: "4px",
+                background: "var(--bg-page)",
+                borderRadius: "var(--radius-md)",
+                width: "fit-content",
+              }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInputMode("manual");
+                    resetForm();
+                  }}
+                  style={{
+                    padding: "8px 18px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "none",
+                    fontFamily: "var(--font-heading)",
+                    fontWeight: 700, fontSize: 12,
+                    cursor: "pointer",
+                    transition: "var(--transition)",
+                    background: inputMode === "manual" ? "var(--navy)" : "transparent",
+                    color: inputMode === "manual" ? "var(--gold)" : "var(--text-muted)",
+                    boxShadow: inputMode === "manual" ? "var(--shadow-sm)" : "none",
+                  }}
+                >
+                  Enter Manually
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInputMode("catalogue");
+                    resetForm();
+                  }}
+                  style={{
+                    padding: "8px 18px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "none",
+                    fontFamily: "var(--font-heading)",
+                    fontWeight: 700, fontSize: 12,
+                    cursor: "pointer",
+                    transition: "var(--transition)",
+                    background: inputMode === "catalogue" ? "var(--navy)" : "transparent",
+                    color: inputMode === "catalogue" ? "var(--gold)" : "var(--text-muted)",
+                    boxShadow: inputMode === "catalogue" ? "var(--shadow-sm)" : "none",
+                  }}
+                >
+                  Select from Catalogue
+                  {catalogue.length > 0 && (
+                    <span style={{
+                      marginLeft: 6,
+                      background: "var(--gold)",
+                      color: "var(--navy)",
+                      fontSize: 10,
+                      fontWeight: 900,
+                      padding: "1px 6px",
+                      borderRadius: "var(--radius-full)",
+                    }}>
+                      {catalogue.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+
               <form onSubmit={handleAdd}>
+
+                {/* CATALOGUE MODE */}
+                {inputMode === "catalogue" && (
+                  <div style={{ marginBottom: 16 }}>
+                    {catalogue.length === 0 ? (
+                      <div style={{
+                        padding: "20px",
+                        background: "var(--bg-page)",
+                        border: "1.5px solid var(--border)",
+                        borderRadius: "var(--radius-md)",
+                        textAlign: "center",
+                      }}>
+                        <p style={{
+                          fontFamily: "var(--font-heading)",
+                          fontWeight: 600, fontSize: 14,
+                          color: "var(--navy)", marginBottom: 6,
+                        }}>
+                          No courses in catalogue yet
+                        </p>
+                        <p style={{
+                          fontSize: 13, color: "var(--text-muted)",
+                        }}>
+                          The system administrator has not added any courses yet.
+                          Please use manual entry below.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="form-group">
+                        <label className="form-label">
+                          Select Course from Catalogue
+                        </label>
+                        <select
+                          onChange={handleCatalogueSelect}
+                          className="form-input form-select"
+                          defaultValue=""
+                        >
+                          <option value="">
+                            Select a course...
+                          </option>
+                          {catalogue.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.code} — {c.name} ({c.credit_hours} cr)
+                            </option>
+                          ))}
+                        </select>
+                        <p style={{
+                          fontSize: 11,
+                          color: "var(--text-muted)",
+                          marginTop: 6,
+                          fontFamily: "var(--font-heading)",
+                        }}>
+                          Course code, title and credits will be filled
+                          automatically. You can still edit them below.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Row 1 — Code, Name, Credits */}
                 <div style={{
                   display: "grid",
                   gridTemplateColumns: "140px 1fr 100px",
-                  gap: 16,
-                  marginBottom: 16,
+                  gap: 16, marginBottom: 16,
                 }} className="form-row-1">
 
                   <div className="form-group">
@@ -251,8 +411,7 @@ export default function Results() {
                 <div style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 16,
-                  marginBottom: 20,
+                  gap: 16, marginBottom: 20,
                 }} className="form-row-2">
 
                   <div className="form-group">
@@ -315,7 +474,6 @@ export default function Results() {
                     gap: 14,
                     flexWrap: "wrap",
                   }}>
-                    <span style={{ fontSize: 16 }}>👁️</span>
                     <span style={{
                       fontFamily: "var(--font-heading)",
                       fontWeight: 800, fontSize: 13,
@@ -358,10 +516,29 @@ export default function Results() {
             </div>
           )}
 
-          {/* RESULTS */}
+          {/* RESULTS LIST */}
           {results.length === 0 ? (
-            <div className="card" style={{ textAlign: "center", padding: "60px 40px" }}>
-              <p style={{ fontSize: 48, marginBottom: 16 }}>📋</p>
+            <div className="card" style={{
+              textAlign: "center", padding: "60px 40px",
+            }}>
+              <div style={{
+                width: 56, height: 56,
+                borderRadius: "var(--radius-md)",
+                background: "var(--blue-bg)",
+                border: "1.5px solid var(--blue-border)",
+                display: "flex", alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 20px",
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                  stroke="var(--blue)" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
               <h3 style={{
                 fontFamily: "var(--font-heading)",
                 fontWeight: 700, fontSize: 18,
@@ -373,22 +550,19 @@ export default function Results() {
                 color: "var(--text-muted)", fontSize: 14,
                 marginBottom: 24, lineHeight: 1.6,
               }}>
-                Add your results exactly as shown on your
-                UPSA result sheet — course code, title,
-                credit hours and grade.
+                Add your results exactly as shown on your UPSA result sheet.
+                Enter the course code, title, credit hours and your grade.
               </p>
               <button
                 onClick={() => setShowForm(true)}
                 className="btn btn-primary"
               >
-                + Add Your First Result
+                Add Your First Result
               </button>
             </div>
           ) : (
             <div style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 20,
+              display: "flex", flexDirection: "column", gap: 20,
             }}>
               {Object.entries(grouped).map(([semester, semResults], gi) => {
                 const semCredits = semResults.reduce((s, r) => s + r.credit_hours, 0);
@@ -415,8 +589,7 @@ export default function Results() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      flexWrap: "wrap",
-                      gap: 8,
+                      flexWrap: "wrap", gap: 8,
                     }}>
                       <div>
                         <h3 style={{
@@ -442,7 +615,9 @@ export default function Results() {
                           letterSpacing: "0.1em",
                           fontFamily: "var(--font-heading)",
                           marginBottom: 2,
-                        }}>Semester GPA</p>
+                        }}>
+                          Semester GPA
+                        </p>
                         <p style={{
                           fontFamily: "var(--font-heading)",
                           fontWeight: 900, fontSize: 24,
@@ -495,16 +670,13 @@ export default function Results() {
                             }}>
                               {r.course_code}
                             </span>
-
                             <span style={{
                               fontSize: 13,
                               color: "var(--text-secondary)",
-                              fontWeight: 500,
-                              paddingRight: 12,
+                              fontWeight: 500, paddingRight: 12,
                             }}>
                               {r.course_name}
                             </span>
-
                             <span style={{
                               fontSize: 13,
                               color: "var(--text-muted)",
@@ -520,10 +692,7 @@ export default function Results() {
                                 onChange={(e) => setEditGrade(e.target.value)}
                                 autoFocus
                                 className="form-input form-select"
-                                style={{
-                                  width: 70, padding: "5px 8px",
-                                  fontSize: 12,
-                                }}
+                                style={{ width: 70, padding: "5px 8px", fontSize: 12 }}
                               >
                                 {GRADE_OPTIONS.map((g) => (
                                   <option key={g} value={g}>{g}</option>
@@ -556,7 +725,7 @@ export default function Results() {
                                     onClick={() => { setEditingId(null); setEditGrade(""); }}
                                     className="btn btn-outline btn-sm"
                                   >
-                                    ✕
+                                    Cancel
                                   </button>
                                 </>
                               ) : (
@@ -576,7 +745,7 @@ export default function Results() {
                                     onClick={() => handleDelete(r.result_id)}
                                     className="btn btn-danger btn-sm"
                                   >
-                                    Del
+                                    Delete
                                   </button>
                                 </>
                               )}
@@ -623,7 +792,6 @@ export default function Results() {
                                 </p>
                               </div>
                               <div style={{
-                                textAlign: "right",
                                 display: "flex",
                                 flexDirection: "column",
                                 alignItems: "flex-end",
@@ -664,7 +832,7 @@ export default function Results() {
                                     onClick={() => { setEditingId(null); setEditGrade(""); }}
                                     className="btn btn-outline btn-sm"
                                   >
-                                    ✕
+                                    Cancel
                                   </button>
                                 </>
                               ) : (
@@ -746,7 +914,7 @@ export default function Results() {
       {/* Toast */}
       {toast && (
         <div className={`toast ${toast.type === "error" ? "toast-error" : "toast-success"}`}>
-          {toast.type === "error" ? "❌" : "✅"} {toast.msg}
+          {toast.msg}
         </div>
       )}
 
