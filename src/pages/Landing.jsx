@@ -1,44 +1,5 @@
 import { Link } from "react";
 
-const features = [
-  {
-    title: "CGPA Tracker",
-    desc: "Track your cumulative GPA across every semester with real-time updates and visual progress indicators.",
-    color: "var(--blue-bg)", border: "var(--blue-border)", iconColor: "var(--blue)",
-    icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>),
-  },
-  {
-    title: "Risk Analysis",
-    desc: "Get instant alerts when your academic standing is at risk before it is too late to act.",
-    color: "var(--amber-bg)", border: "var(--amber-border)", iconColor: "var(--amber)",
-    icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>),
-  },
-  {
-    title: "PDF Transcript",
-    desc: "Generate and download a formatted academic transcript of all your results at any time.",
-    color: "var(--green-bg)", border: "var(--green-border)", iconColor: "var(--green)",
-    icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>),
-  },
-  {
-    title: "CGPA Simulator",
-    desc: "Simulate future grades and calculate exactly what you need to reach your target classification.",
-    color: "#FDF4FF", border: "#E9D5FF", iconColor: "#7C3AED",
-    icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>),
-  },
-  {
-    title: "GPA Trends",
-    desc: "Visualise your academic performance over time with an interactive semester-by-semester chart.",
-    color: "var(--orange-bg)", border: "var(--orange-border)", iconColor: "var(--orange)",
-    icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>),
-  },
-  {
-    title: "Classification Ladder",
-    desc: "See exactly where you stand on the UPSA classification scale and how far you are from First Class.",
-    color: "var(--red-bg)", border: "var(--red-border)", iconColor: "var(--red)",
-    icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17,11 12,6 7,11"/><polyline points="17,18 12,13 7,18"/></svg>),
-  },
-];
-
 const classifications = [
   { label: "First Class", range: "3.6 - 4.0", color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)" },
   { label: "Second Class Upper", range: "3.0 - 3.59", color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)" },
@@ -56,10 +17,19 @@ const steps = [
 
 const faqs = [
   { q: "Is GradeIQ UPSA free to use?", a: "Yes, completely free for all UPSA students. No subscription or payment is required." },
-  { q: "Do I need my score to use this platform?", a: "No. GradeIQ only requires your grade letters (A, B+, B, etc.) exactly as shown on your result sheet." },
-  { q: "Is my data private and secure?", a: "Your results and CGPA are private to your account. Admins only see anonymous platform analytics, never individual grades." },
+  { q: "Do I need my score to use this platform?", a: "No. GradeIQ only requires your grade letters exactly as shown on your result sheet." },
+  { q: "Is my data private and secure?", a: "Your results and CGPA are private to your account. Admins only see anonymous platform analytics." },
   { q: "What if my course is not in the catalogue?", a: "You can always enter your course manually. The catalogue is a convenience feature, not a requirement." },
   { q: "Can I reset my password if I forget it?", a: "Yes. Use the Forgot Password link on the login page. Reset emails work for Gmail addresses." },
+];
+
+const features = [
+  { title: "CGPA Tracker", desc: "Track your cumulative GPA across every semester with real-time updates and visual progress indicators.", color: "var(--blue-bg)", border: "var(--blue-border)", iconColor: "var(--blue)" },
+  { title: "Risk Analysis", desc: "Get instant alerts when your academic standing is at risk before it is too late to act.", color: "var(--amber-bg)", border: "var(--amber-border)", iconColor: "var(--amber)" },
+  { title: "PDF Transcript", desc: "Generate and download a formatted academic transcript of all your results at any time.", color: "var(--green-bg)", border: "var(--green-border)", iconColor: "var(--green)" },
+  { title: "CGPA Simulator", desc: "Simulate future grades and calculate exactly what you need to reach your target classification.", color: "#FDF4FF", border: "#E9D5FF", iconColor: "#7C3AED" },
+  { title: "GPA Trends", desc: "Visualise your academic performance over time with an interactive semester-by-semester chart.", color: "var(--orange-bg)", border: "var(--orange-border)", iconColor: "var(--orange)" },
+  { title: "Classification Ladder", desc: "See exactly where you stand on the UPSA classification scale and how far you are from First Class.", color: "var(--red-bg)", border: "var(--red-border)", iconColor: "var(--red)" },
 ];
 
 export default function Landing() {
@@ -89,18 +59,17 @@ export default function Landing() {
 
       {/* HERO */}
       <div style={{ background: "linear-gradient(160deg, #060f2e 0%, var(--navy) 60%, #0a2050 100%)", padding: "100px 32px 120px", position: "relative", overflow: "hidden", textAlign: "center" }}>
-        <div style={{ position: "absolute", top: -100, right: -100, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,192,5,0.06) 0%, transparent 65%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, transparent, var(--gold), transparent)" }} />
         <div style={{ position: "relative", zIndex: 10, maxWidth: 760, margin: "0 auto" }} className="fade-up">
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,192,5,0.08)", border: "1px solid rgba(255,192,5,0.2)", borderRadius: "var(--radius-full)", padding: "6px 16px", marginBottom: 32 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--gold)" }} />
-            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 12, color: "rgba(255,255,255,0.7)", letterSpacing: "0.05em" }}>University of Professional Studies, Accra</span>
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 12, color: "rgba(255,255,255,0.7)" }}>University of Professional Studies, Accra</span>
           </div>
           <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(40px, 7vw, 72px)", lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 24 }}>
             <span style={{ color: "var(--gold)" }}>Know Your Grade.</span><br />
             <span style={{ color: "white" }}>Own Your Future.</span>
           </h1>
-          <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "clamp(15px, 2vw, 18px)", lineHeight: 1.8, marginBottom: 44, maxWidth: 580, margin: "0 auto 44px" }}>
+          <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "clamp(15px, 2vw, 18px)", lineHeight: 1.8, maxWidth: 580, margin: "0 auto 44px" }}>
             The smart academic intelligence platform built exclusively for UPSA students. Track your CGPA, analyse your risk and plan your path to First Class.
           </p>
           <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginBottom: 64 }}>
@@ -127,16 +96,28 @@ export default function Landing() {
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "96px 32px" }}>
         <div style={{ textAlign: "center", marginBottom: 64 }}>
           <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: 16 }}>Platform Features</p>
-          <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 4vw, 44px)", color: "var(--navy)", marginBottom: 16, letterSpacing: "-0.02em", lineHeight: 1.15 }}>Built for UPSA students,<br />by a UPSA student.</h2>
-          <p style={{ color: "var(--text-muted)", fontSize: 16, lineHeight: 1.8, maxWidth: 520, margin: "0 auto" }}>Every feature was designed around the way UPSA calculates grades, classifies students and measures academic performance.</p>
+          <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 4vw, 44px)", color: "var(--navy)", marginBottom: 16, letterSpacing: "-0.02em", lineHeight: 1.15 }}>
+            Built for UPSA students,<br />by a UPSA student.
+          </h2>
+          <p style={{ color: "var(--text-muted)", fontSize: 16, lineHeight: 1.8, maxWidth: 520, margin: "0 auto" }}>
+            Every feature was designed around the way UPSA calculates grades, classifies students and measures academic performance.
+          </p>
         </div>
         <div className="grid-3" style={{ gap: 20 }}>
           {features.map((f, i) => (
-            <div key={f.title} className={`card fade-up-${Math.min(i + 1, 5)}`} style={{ border: `1.5px solid ${f.border}`, transition: "var(--transition)" }}
+            <div key={f.title} className={"card fade-up-" + Math.min(i + 1, 5)}
+              style={{ border: "1.5px solid " + f.border, transition: "var(--transition)" }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "var(--shadow-lg)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "var(--shadow-sm)"; }}
             >
-              <div style={{ width: 48, height: 48, borderRadius: "var(--radius-md)", background: f.color, display: "flex", alignItems: "center", justifyContent: "center", color: f.iconColor, marginBottom: 18 }}>{f.icon}</div>
+              <div style={{ width: 48, height: 48, borderRadius: "var(--radius-md)", background: f.color, display: "flex", alignItems: "center", justifyContent: "center", color: f.iconColor, marginBottom: 18, fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 20 }}>
+                {i === 0 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>}
+                {i === 1 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+                {i === 2 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>}
+                {i === 3 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>}
+                {i === 4 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>}
+                {i === 5 && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17,11 12,6 7,11"/><polyline points="17,18 12,13 7,18"/></svg>}
+              </div>
               <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16, color: "var(--navy)", marginBottom: 8 }}>{f.title}</h3>
               <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>{f.desc}</p>
             </div>
@@ -145,8 +126,8 @@ export default function Landing() {
       </div>
 
       {/* CLASSIFICATION */}
-      <div style={{ background: "linear-gradient(135deg, #060f2e 0%, var(--navy) 100%)", padding: "96px 32px", position: "relative", overflow: "hidden" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
+      <div style={{ background: "linear-gradient(135deg, #060f2e 0%, var(--navy) 100%)", padding: "96px 32px" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 11, color: "rgba(255,192,5,0.5)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: 16 }}>Official UPSA Grading System</p>
             <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 4vw, 44px)", color: "white", marginBottom: 12, letterSpacing: "-0.02em" }}>Classification Scale</h2>
@@ -154,7 +135,8 @@ export default function Landing() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
             {classifications.map((c, i) => (
-              <div key={c.label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "var(--radius-lg)", padding: "28px 20px", textAlign: "center", transition: "all 0.2s ease", cursor: "default" }}
+              <div key={c.label}
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "var(--radius-lg)", padding: "28px 20px", textAlign: "center", transition: "all 0.2s ease", cursor: "default" }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = c.bg; e.currentTarget.style.borderColor = c.border; e.currentTarget.style.transform = "translateY(-4px)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}
               >
@@ -178,7 +160,8 @@ export default function Landing() {
         </div>
         <div className="grid-3" style={{ gap: 24 }}>
           {steps.map((step) => (
-            <div key={step.num} style={{ padding: "44px 32px", background: "var(--bg-card)", borderRadius: "var(--radius-xl)", border: "1.5px solid var(--border)", boxShadow: "var(--shadow-md)", position: "relative", transition: "var(--transition)", overflow: "hidden" }}
+            <div key={step.num}
+              style={{ padding: "44px 32px", background: "var(--bg-card)", borderRadius: "var(--radius-xl)", border: "1.5px solid var(--border)", boxShadow: "var(--shadow-md)", position: "relative", transition: "var(--transition)", overflow: "hidden" }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "var(--shadow-lg)"; e.currentTarget.style.borderColor = "var(--navy)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.borderColor = "var(--border)"; }}
             >
@@ -201,7 +184,8 @@ export default function Landing() {
             <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 3vw, 40px)", color: "var(--navy)", letterSpacing: "-0.02em", lineHeight: 1.15, marginBottom: 20 }}>We are here to help.</h2>
             <p style={{ color: "var(--text-muted)", fontSize: 15, lineHeight: 1.8, marginBottom: 32, maxWidth: 420 }}>Experiencing an issue? Reach out directly and we will get back to you as quickly as possible.</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <a href="mailto:ahenkorajoshuaowusu@outlook.com" style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", background: "var(--bg-page)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", textDecoration: "none", transition: "var(--transition)" }}
+              <a href="mailto:ahenkorajoshuaowusu@outlook.com"
+                style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", background: "var(--bg-page)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", textDecoration: "none", transition: "var(--transition)" }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--navy)"; e.currentTarget.style.background = "var(--navy)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--bg-page)"; }}
               >
@@ -210,7 +194,8 @@ export default function Landing() {
                   <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 14, color: "var(--navy)" }}>ahenkorajoshuaowusu@outlook.com</p>
                 </div>
               </a>
-              <a href="tel:+233537041324" style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", background: "var(--bg-page)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", textDecoration: "none", transition: "var(--transition)" }}
+              <a href="tel:+233537041324"
+                style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", background: "var(--bg-page)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", textDecoration: "none", transition: "var(--transition)" }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--navy)"; e.currentTarget.style.background = "var(--navy)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--bg-page)"; }}
               >
@@ -225,7 +210,8 @@ export default function Landing() {
             <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: 20 }}>Frequently Asked Questions</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {faqs.map((faq, i) => (
-                <div key={i} style={{ padding: "16px 18px", background: "var(--bg-page)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", transition: "var(--transition)" }}
+                <div key={i}
+                  style={{ padding: "16px 18px", background: "var(--bg-page)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", transition: "var(--transition)" }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--navy)"; e.currentTarget.style.background = "white"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--bg-page)"; }}
                 >
@@ -239,10 +225,10 @@ export default function Landing() {
       </div>
 
       {/* CTA */}
-      <div style={{ background: "linear-gradient(135deg, #060f2e 0%, var(--navy) 100%)", padding: "96px 32px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(135deg, #060f2e 0%, var(--navy) 100%)", padding: "96px 32px", textAlign: "center" }}>
         <div style={{ position: "relative", zIndex: 10, maxWidth: 600, margin: "0 auto" }} className="fade-up">
           <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(32px, 5vw, 52px)", color: "white", marginBottom: 16, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
-            Start tracking your<br /><span style={{ color: "var(--gold)" }}>CGPA and academic strenght today.</span>
+            Start tracking your<br /><span style={{ color: "var(--gold)" }}>CGPA today.</span>
           </h2>
           <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 16, lineHeight: 1.8, marginBottom: 40 }}>Free forever. No scores needed. Just your grades, your goals and your growth.</p>
           <Link to="/register" className="btn btn-gold btn-lg" style={{ minWidth: 240, fontSize: 15 }}>Create Free Account</Link>
