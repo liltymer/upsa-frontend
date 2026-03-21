@@ -174,7 +174,7 @@ export default function ForgotPassword() {
                 color: "var(--navy)", marginBottom: 8,
                 letterSpacing: "-0.02em",
               }}>
-                Forgot your password? 🔐
+                Forgot your password? 
               </h2>
 
               <p style={{
@@ -210,7 +210,7 @@ export default function ForgotPassword() {
                   <strong>Gmail addresses</strong>.
                   If you registered with a different email, contact support:
                   <br />
-                  📧 <strong>ahenkorajoshuaowusu@outlook.com</strong>
+                  <strong>ahenkorajoshuaowusu@outlook.com</strong>
                   <br />
                   📞 <strong>+233 537 041 324</strong>
                 </p>
