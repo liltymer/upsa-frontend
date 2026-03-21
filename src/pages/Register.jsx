@@ -184,14 +184,14 @@ export default function Register() {
                   <div className="form-group">
                     <label className="form-label">Email Address</label>
                     <input type="email" name="email" placeholder="youraddress@gmail.com" value={form.email} onChange={handleChange} required className="form-input" />
-                    <p style={{
+                  <p style={{
                      fontSize: 11,
                      color: "var(--text-muted)",
                      marginTop: 4,
                      fontFamily: "var(--font-heading)",
                     }}>
                      Use a Gmail address to enable password reset via email.
-                    </p>
+                  </p>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Password</label>
