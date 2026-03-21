@@ -9,6 +9,7 @@ const navItems = [
   { label: "Transcript", path: "/transcript" },
   { label: "Simulator", path: "/simulator" },
   { label: "Risk", path: "/risk" },
+  { label: "Profile", path: "/profile" },
 ];
 
 export default function Navbar() {
