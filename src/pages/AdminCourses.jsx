@@ -3,26 +3,29 @@ import { Link } from "react-router-dom";
 import API from "../services/api";
 
 const PROGRAMMES = [
-  "Diploma in Information Technology Management",
-  "Diploma in Accounting",
-  "Diploma in Marketing",
-  "Diploma in Human Resource Management",
-  "Diploma in Logistics and Supply Chain Management",
-  "BSc Information Technology Management",
-  "BSc Accounting",
-  "BSc Marketing",
-  "BSc Human Resource Management",
-  "BSc Logistics and Supply Chain Management",
-  "BSc Banking and Finance",
-  "BSc Business Administration",
-  "BSc Public Administration",
-  "BSc Procurement and Supply Chain Management",
-  "BSc Internal Auditing",
-  "BSc Secretaryship and Management Studies",
-  "MBA",
-  "MSc Information Technology Management",
+"Diploma in Accounting",
+"Diploma in Marketing",
+"Diploma in Management",
+"Diploma in Public Relations",
+"Diploma in Information Technology Management",
+"Bachelor of Science in Data Science and Analytics",
+"Bachelor of Laws (LLB)",
+"Bachelor of Arts in Communication Studies",
+"Bachelor of Science in Logistics and Transport Management",
+"Bachelor of Arts in Public Relations Management",
+"Bachelor of Science in Accounting",
+"Bachelor of Science in Accounting and Finance",
+"Bachelor of Science in Business Economics",
+"Bachelor of Science in Actuarial Science",
+"Bachelor of Science in Banking and Finance",
+"Bachelor of Business Administration",
+"Bachelor of Science in Information Technology",
+"Bachelor of Science in Marketing",
+"Bachelor of Science in Real Estate Management and Finance",
   "Other",
 ];
+
+const LEVELS = [100, 200, 300, 400];
 
 export default function AdminCourses() {
   const [courses, setCourses] = useState([]);
@@ -34,12 +37,14 @@ export default function AdminCourses() {
   const [search, setSearch] = useState("");
   const [filterProgramme, setFilterProgramme] = useState("");
   const [filterLevel, setFilterLevel] = useState("");
+
+  // Multi-programme/level form state
   const [form, setForm] = useState({
     code: "",
     name: "",
     credit_hours: 3,
-    programme: "",
-    level: "",
+    programmes: [], // array of selected programmes
+    levels: [],     // array of selected levels
   });
 
   const showToast = (msg, type = "success") => {
@@ -72,13 +77,47 @@ export default function AdminCourses() {
       );
     }
     if (filterProgramme) {
-      result = result.filter((c) => c.programme === filterProgramme);
+      result = result.filter((c) => {
+        if (c.programmes?.length > 0) {
+          return c.programmes.includes(filterProgramme);
+        }
+        return c.programme === filterProgramme;
+      });
     }
     if (filterLevel) {
-      result = result.filter((c) => String(c.level) === filterLevel);
+      result = result.filter((c) => {
+        if (c.levels?.length > 0) {
+          return c.levels.includes(Number(filterLevel));
+        }
+        return String(c.level) === filterLevel;
+      });
     }
     setFiltered(result);
   }, [search, filterProgramme, filterLevel, courses]);
+
+  // Toggle programme selection
+  const toggleProgramme = (programme) => {
+    setForm((prev) => ({
+      ...prev,
+      programmes: prev.programmes.includes(programme)
+        ? prev.programmes.filter((p) => p !== programme)
+        : [...prev.programmes, programme],
+    }));
+  };
+
+  // Toggle level selection
+  const toggleLevel = (level) => {
+    setForm((prev) => ({
+      ...prev,
+      levels: prev.levels.includes(level)
+        ? prev.levels.filter((l) => l !== level)
+        : [...prev.levels, level],
+    }));
+  };
+
+  const resetForm = () => {
+    setForm({ code: "", name: "", credit_hours: 3, programmes: [], levels: [] });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -87,18 +126,38 @@ export default function AdminCourses() {
       return;
     }
     setSubmitting(true);
+
+    // If multiple programmes/levels selected, create one entry per combination
+    // If none selected, create one entry with null programme and level
+    const programmesToUse = form.programmes.length > 0 ? form.programmes : [null];
+    const levelsToUse = form.levels.length > 0 ? form.levels : [null];
+
     try {
-      await API.post("/admin/courses", {
-        code: form.code.trim().toUpperCase(),
-        name: form.name.trim(),
-        credit_hours: Number(form.credit_hours),
-        programme: form.programme || null,
-        level: form.level ? Number(form.level) : null,
-      });
-      setForm({ code: "", name: "", credit_hours: 3, programme: "", level: "" });
+      const promises = [];
+      for (const prog of programmesToUse) {
+        for (const lvl of levelsToUse) {
+          promises.push(
+            API.post("/admin/courses", {
+              code: form.code.trim().toUpperCase(),
+              name: form.name.trim(),
+              credit_hours: Number(form.credit_hours),
+              programme: prog,
+              level: lvl,
+            })
+          );
+        }
+      }
+      await Promise.all(promises);
+
+      const total = programmesToUse.length * levelsToUse.length;
+      resetForm();
       setShowForm(false);
       await fetchCourses();
-      showToast("Course added to catalogue!");
+      showToast(
+        total > 1
+          ? `Course added for ${total} programme/level combinations.`
+          : "Course added to catalogue."
+      );
     } catch (err) {
       showToast(
         err.response?.data?.detail || "Failed to add course.", "error"
@@ -151,25 +210,24 @@ export default function AdminCourses() {
             <p style={{
               color: "rgba(255,255,255,0.4)", fontSize: 13,
             }}>
-              {courses.length} course{courses.length !== 1 ? "s" : ""} in the
-              catalogue · Official UPSA reference courses
+              {courses.length} course{courses.length !== 1 ? "s" : ""} in the catalogue
             </p>
           </div>
           <div style={{
             display: "flex", gap: 10,
             flexShrink: 0, marginTop: 4,
           }}>
-            <Link
-              to="/admin"
-              className="btn btn-ghost fade-up-1"
-            >
-              ← Overview
+            <Link to="/admin" className="btn btn-ghost fade-up-1">
+              Back to Overview
             </Link>
             <button
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => {
+                setShowForm(!showForm);
+                resetForm();
+              }}
               className={`btn ${showForm ? "btn-ghost" : "btn-gold"} fade-up-1`}
             >
-              {showForm ? "✕ Cancel" : "+ Add Course"}
+              {showForm ? "Cancel" : "+ Add Course"}
             </button>
           </div>
         </div>
@@ -180,24 +238,29 @@ export default function AdminCourses() {
       ================================ */}
       <div className="overlap-section" style={{ paddingBottom: 60 }}>
 
-        {/* Add Course Form */}
+        {/* ================================
+            ADD COURSE FORM
+        ================================ */}
         {showForm && (
           <div className="card fade-up" style={{ marginBottom: 24 }}>
             <div style={{ marginBottom: 20 }}>
               <h3 className="section-title" style={{ marginBottom: 4 }}>
-                📚 Add New Course
+                Add New Course
               </h3>
               <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
                 Add an official UPSA course to the reference catalogue.
-                Students will be able to select it when entering results.
+                Select all programmes and levels that offer this course —
+                the system will create separate entries for each combination.
               </p>
             </div>
 
             <form onSubmit={handleSubmit}>
+
+              {/* Code, Name, Credits */}
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "160px 1fr 100px",
-                gap: 16, marginBottom: 16,
+                gap: 16, marginBottom: 24,
               }} className="course-form-row1">
 
                 <div className="form-group">
@@ -228,9 +291,7 @@ export default function AdminCourses() {
                   <label className="form-label">Credits</label>
                   <select
                     value={form.credit_hours}
-                    onChange={(e) => setForm({
-                      ...form, credit_hours: e.target.value,
-                    })}
+                    onChange={(e) => setForm({ ...form, credit_hours: e.target.value })}
                     className="form-input form-select"
                   >
                     {[1, 2, 3, 4, 5, 6].map((c) => (
@@ -240,103 +301,215 @@ export default function AdminCourses() {
                 </div>
               </div>
 
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16, marginBottom: 20,
-              }} className="course-form-row2">
-
-                <div className="form-group">
-                  <label className="form-label">Programme (Optional)</label>
-                  <select
-                    value={form.programme}
-                    onChange={(e) => setForm({
-                      ...form, programme: e.target.value,
-                    })}
-                    className="form-input form-select"
-                  >
-                    <option value="">All Programmes</option>
-                    {PROGRAMMES.map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Level (Optional)</label>
-                  <select
-                    value={form.level}
-                    onChange={(e) => setForm({ ...form, level: e.target.value })}
-                    className="form-input form-select"
-                  >
-                    <option value="">All Levels</option>
-                    {[100, 200, 300, 400].map((l) => (
-                      <option key={l} value={l}>Level {l}</option>
-                    ))}
-                  </select>
+              {/* Level selector */}
+              <div style={{ marginBottom: 24 }}>
+                <label className="form-label" style={{ marginBottom: 10, display: "block" }}>
+                  Levels — Select all that apply
+                  <span style={{
+                    marginLeft: 8,
+                    fontSize: 11,
+                    color: "var(--text-muted)",
+                    fontWeight: 400,
+                    textTransform: "none",
+                    letterSpacing: 0,
+                  }}>
+                    (leave blank to apply to all levels)
+                  </span>
+                </label>
+                <div style={{
+                  display: "flex", gap: 10, flexWrap: "wrap",
+                }}>
+                  {LEVELS.map((l) => {
+                    const selected = form.levels.includes(l);
+                    return (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => toggleLevel(l)}
+                        style={{
+                          padding: "8px 20px",
+                          borderRadius: "var(--radius-sm)",
+                          border: `1.5px solid ${selected ? "var(--navy)" : "var(--border)"}`,
+                          background: selected ? "var(--navy)" : "var(--bg-card)",
+                          color: selected ? "var(--gold)" : "var(--text-secondary)",
+                          fontFamily: "var(--font-heading)",
+                          fontWeight: 700, fontSize: 13,
+                          cursor: "pointer",
+                          transition: "var(--transition)",
+                        }}
+                      >
+                        Level {l}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Live preview */}
+              {/* Programme selector */}
+              <div style={{ marginBottom: 24 }}>
+                <label className="form-label" style={{ marginBottom: 10, display: "block" }}>
+                  Programmes — Select all that offer this course
+                  <span style={{
+                    marginLeft: 8,
+                    fontSize: 11,
+                    color: "var(--text-muted)",
+                    fontWeight: 400,
+                    textTransform: "none",
+                    letterSpacing: 0,
+                  }}>
+                    (leave blank to apply to all programmes)
+                  </span>
+                </label>
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+                  gap: 8,
+                  maxHeight: 260,
+                  overflowY: "auto",
+                  padding: "2px",
+                }}>
+                  {PROGRAMMES.map((p) => {
+                    const selected = form.programmes.includes(p);
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => toggleProgramme(p)}
+                        style={{
+                          padding: "10px 14px",
+                          borderRadius: "var(--radius-sm)",
+                          border: `1.5px solid ${selected ? "var(--navy)" : "var(--border)"}`,
+                          background: selected ? "var(--navy)" : "var(--bg-card)",
+                          color: selected ? "var(--gold)" : "var(--text-secondary)",
+                          fontFamily: "var(--font-heading)",
+                          fontWeight: selected ? 700 : 500,
+                          fontSize: 12,
+                          cursor: "pointer",
+                          transition: "var(--transition)",
+                          textAlign: "left",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        {/* Checkbox indicator */}
+                        <span style={{
+                          width: 16, height: 16,
+                          borderRadius: 4,
+                          border: `2px solid ${selected ? "var(--gold)" : "var(--border)"}`,
+                          background: selected ? "var(--gold)" : "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          transition: "var(--transition)",
+                        }}>
+                          {selected && (
+                            <svg width="10" height="10" viewBox="0 0 10 10"
+                              fill="none" stroke="var(--navy)"
+                              strokeWidth="2" strokeLinecap="round"
+                              strokeLinejoin="round">
+                              <polyline points="1.5,5 4,7.5 8.5,2"/>
+                            </svg>
+                          )}
+                        </span>
+                        {p}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Select all / Clear */}
+                <div style={{
+                  display: "flex", gap: 10, marginTop: 10,
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, programmes: [...PROGRAMMES] })}
+                    className="btn btn-outline btn-sm"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, programmes: [] })}
+                    className="btn btn-outline btn-sm"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+
+              {/* Summary */}
               {form.code && form.name && (
                 <div style={{
                   background: "var(--bg-page)",
                   border: "1.5px solid var(--border)",
                   borderRadius: "var(--radius-md)",
-                  padding: "12px 16px",
+                  padding: "14px 16px",
                   marginBottom: 20,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  flexWrap: "wrap",
                 }}>
-                  <span style={{ fontSize: 16 }}>👁️</span>
-                  <span style={{
+                  <p style={{
                     fontFamily: "var(--font-heading)",
-                    fontWeight: 800, fontSize: 13,
-                    color: "var(--navy)",
+                    fontWeight: 700, fontSize: 12,
+                    color: "var(--navy)", marginBottom: 8,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
                   }}>
-                    {form.code.toUpperCase()}
-                  </span>
-                  <span style={{
-                    fontSize: 13, color: "var(--text-secondary)",
+                    Summary
+                  </p>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12, flexWrap: "wrap",
+                    marginBottom: 8,
                   }}>
-                    {form.name}
-                  </span>
-                  <span style={{
-                    fontFamily: "var(--font-heading)",
-                    fontWeight: 600, fontSize: 12,
-                    color: "var(--text-muted)",
-                  }}>
-                    {form.credit_hours} cr
-                  </span>
-                  {form.programme && (
                     <span style={{
-                      fontSize: 11,
-                      color: "var(--blue)",
+                      fontFamily: "var(--font-heading)",
+                      fontWeight: 800, fontSize: 13,
+                      color: "var(--navy)",
+                    }}>
+                      {form.code.toUpperCase()}
+                    </span>
+                    <span style={{
+                      fontSize: 13, color: "var(--text-secondary)",
+                    }}>
+                      {form.name}
+                    </span>
+                    <span style={{
+                      fontSize: 12, color: "var(--text-muted)",
+                      fontFamily: "var(--font-heading)", fontWeight: 600,
+                    }}>
+                      {form.credit_hours} credits
+                    </span>
+                  </div>
+                  <p style={{
+                    fontSize: 12, color: "var(--text-muted)",
+                    fontFamily: "var(--font-heading)",
+                  }}>
+                    {form.levels.length === 0
+                      ? "All levels"
+                      : form.levels.map((l) => `Level ${l}`).join(", ")}
+                    {" — "}
+                    {form.programmes.length === 0
+                      ? "All programmes"
+                      : `${form.programmes.length} programme${form.programmes.length !== 1 ? "s" : ""} selected`}
+                  </p>
+                  {form.programmes.length > 0 && form.levels.length > 0 && (
+                    <p style={{
+                      fontSize: 12,
+                      color: "var(--navy)",
+                      fontFamily: "var(--font-heading)",
+                      fontWeight: 700,
+                      marginTop: 6,
+                      padding: "6px 10px",
                       background: "var(--blue-bg)",
                       border: "1px solid var(--blue-border)",
-                      padding: "3px 10px",
-                      borderRadius: "var(--radius-full)",
-                      fontFamily: "var(--font-heading)",
-                      fontWeight: 600,
+                      borderRadius: "var(--radius-sm)",
+                      display: "inline-block",
                     }}>
-                      {form.programme}
-                    </span>
-                  )}
-                  {form.level && (
-                    <span style={{
-                      fontSize: 11,
-                      color: "var(--amber)",
-                      background: "var(--amber-bg)",
-                      border: "1px solid var(--amber-border)",
-                      padding: "3px 10px",
-                      borderRadius: "var(--radius-full)",
-                      fontFamily: "var(--font-heading)",
-                      fontWeight: 600,
-                    }}>
-                      Level {form.level}
-                    </span>
+                      {form.programmes.length * form.levels.length} catalogue entries will be created
+                    </p>
                   )}
                 </div>
               )}
@@ -350,21 +523,23 @@ export default function AdminCourses() {
                   <><span className="spinner" />Adding...</>
                 ) : "Add to Catalogue →"}
               </button>
+
             </form>
           </div>
         )}
 
-        {/* Filters */}
+        {/* ================================
+            FILTERS
+        ================================ */}
         <div className="card fade-up" style={{ marginBottom: 20 }}>
           <div style={{
             display: "grid",
             gridTemplateColumns: "1fr 200px 160px",
-            gap: 16,
-            alignItems: "end",
+            gap: 16, alignItems: "end",
           }} className="filter-grid">
 
             <div className="form-group">
-              <label className="form-label">🔍 Search Courses</label>
+              <label className="form-label">Search Courses</label>
               <input
                 type="text"
                 placeholder="Search by code or title..."
@@ -396,7 +571,7 @@ export default function AdminCourses() {
                 className="form-input form-select"
               >
                 <option value="">All Levels</option>
-                {[100, 200, 300, 400].map((l) => (
+                {LEVELS.map((l) => (
                   <option key={l} value={l}>Level {l}</option>
                 ))}
               </select>
@@ -430,12 +605,29 @@ export default function AdminCourses() {
           )}
         </div>
 
-        {/* Course List */}
+        {/* ================================
+            COURSE LIST
+        ================================ */}
         {filtered.length === 0 ? (
           <div className="card" style={{
             textAlign: "center", padding: "60px 40px",
           }}>
-            <p style={{ fontSize: 48, marginBottom: 16 }}>📚</p>
+            <div style={{
+              width: 56, height: 56,
+              borderRadius: "var(--radius-md)",
+              background: "var(--blue-bg)",
+              border: "1.5px solid var(--blue-border)",
+              display: "flex", alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px",
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="var(--blue)" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+            </div>
             <h3 style={{
               fontFamily: "var(--font-heading)",
               fontWeight: 700, fontSize: 18,
@@ -450,7 +642,7 @@ export default function AdminCourses() {
               marginBottom: 24, lineHeight: 1.6,
             }}>
               {courses.length === 0
-                ? "Add official UPSA courses so students can reference them when entering results."
+                ? "Add official UPSA courses so students can select them when entering results."
                 : "Try adjusting your search or filters."}
             </p>
             {courses.length === 0 && (
@@ -458,7 +650,7 @@ export default function AdminCourses() {
                 onClick={() => setShowForm(true)}
                 className="btn btn-primary"
               >
-                + Add First Course
+                Add First Course
               </button>
             )}
           </div>
@@ -476,7 +668,7 @@ export default function AdminCourses() {
               className="course-table-header"
               style={{
                 display: "grid",
-                gridTemplateColumns: "100px 1fr 80px 200px 80px 80px",
+                gridTemplateColumns: "100px 1fr 80px 1fr 80px 90px",
                 padding: "12px 24px",
                 background: "var(--bg-page)",
                 borderBottom: "1px solid var(--border)",
@@ -504,7 +696,7 @@ export default function AdminCourses() {
                   className="course-table-row"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "100px 1fr 80px 200px 80px 80px",
+                    gridTemplateColumns: "100px 1fr 80px 1fr 80px 90px",
                     padding: "14px 24px",
                     alignItems: "center",
                     borderBottom: i < filtered.length - 1
@@ -529,8 +721,7 @@ export default function AdminCourses() {
                   <span style={{
                     fontSize: 13,
                     color: "var(--text-secondary)",
-                    fontWeight: 500,
-                    paddingRight: 12,
+                    fontWeight: 500, paddingRight: 12,
                   }}>
                     {course.name}
                   </span>
@@ -546,18 +737,24 @@ export default function AdminCourses() {
 
                   <span style={{
                     fontSize: 11,
-                    color: "var(--text-muted)",
+                    color: "var(--text-secondary)",
                     paddingRight: 8,
+                    lineHeight: 1.5,
                   }}>
-                    {course.programme || "—"}
+                    {course.programme || (
+                      <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>
+                        All programmes
+                      </span>
+                    )}
                   </span>
 
                   <span style={{
                     fontFamily: "var(--font-heading)",
                     fontWeight: 600, fontSize: 12,
                     color: course.level ? "var(--blue)" : "var(--text-muted)",
+                    fontStyle: course.level ? "normal" : "italic",
                   }}>
-                    {course.level ? `L${course.level}` : "—"}
+                    {course.level ? `Level ${course.level}` : "All"}
                   </span>
 
                   <button
@@ -595,28 +792,38 @@ export default function AdminCourses() {
                       <p style={{
                         fontSize: 13,
                         color: "var(--text-secondary)",
-                        marginBottom: 4,
+                        marginBottom: 4, lineHeight: 1.4,
                       }}>
                         {course.name}
                       </p>
                       <div style={{
-                        display: "flex", gap: 8,
-                        flexWrap: "wrap",
+                        display: "flex", gap: 8, flexWrap: "wrap",
                       }}>
                         <span style={{
-                          fontSize: 11, color: "var(--text-muted)",
-                          fontFamily: "var(--font-heading)", fontWeight: 600,
+                          fontSize: 11,
+                          color: "var(--text-muted)",
+                          fontFamily: "var(--font-heading)",
+                          fontWeight: 600,
                         }}>
                           {course.credit_hours} credits
                         </span>
-                        {course.level && (
-                          <span style={{
-                            fontSize: 11, color: "var(--blue)",
-                          }}>
-                            Level {course.level}
-                          </span>
-                        )}
+                        <span style={{
+                          fontSize: 11,
+                          color: course.level ? "var(--blue)" : "var(--text-muted)",
+                          fontStyle: course.level ? "normal" : "italic",
+                        }}>
+                          {course.level ? `Level ${course.level}` : "All levels"}
+                        </span>
                       </div>
+                      {course.programme && (
+                        <p style={{
+                          fontSize: 11,
+                          color: "var(--text-muted)",
+                          marginTop: 4,
+                        }}>
+                          {course.programme}
+                        </p>
+                      )}
                     </div>
                     <button
                       onClick={() => handleDelete(course)}
@@ -644,14 +851,14 @@ export default function AdminCourses() {
                 fontWeight: 600, fontSize: 12,
                 color: "var(--text-muted)",
               }}>
-                {filtered.length} course{filtered.length !== 1 ? "s" : ""} shown
+                {filtered.length} course {filtered.length !== 1 ? "entries" : "entry"} shown
               </span>
               <span style={{
                 fontFamily: "var(--font-heading)",
                 fontWeight: 700, fontSize: 12,
                 color: "var(--navy)",
               }}>
-                📚 Official UPSA Course Catalogue
+                Official UPSA Course Catalogue
               </span>
             </div>
 
@@ -662,7 +869,7 @@ export default function AdminCourses() {
       {/* Toast */}
       {toast && (
         <div className={`toast ${toast.type === "error" ? "toast-error" : "toast-success"}`}>
-          {toast.type === "error" ? "❌" : "✅"} {toast.msg}
+          {toast.msg}
         </div>
       )}
 
@@ -672,7 +879,6 @@ export default function AdminCourses() {
           .course-table-row { display: none !important; }
           .course-mobile-card { display: block !important; }
           .course-form-row1 { grid-template-columns: 1fr !important; }
-          .course-form-row2 { grid-template-columns: 1fr !important; }
           .filter-grid { grid-template-columns: 1fr !important; }
         }
         @media (min-width: 641px) {
