@@ -46,9 +46,8 @@ cd upsa-frontend
 # Install dependencies
 npm install
 
-# Create your environment file
+# environment file
 cp .env.example .env
-# Add your backend API URL to .env
 
 # Start the development server
 npm run dev
@@ -61,7 +60,7 @@ The app will run at `http://localhost:5173`
 ## Environment Variables
 
 ```env
-VITE_API_BASE_URL=your_backend_url_here
+VITE_API_BASE_URL=**********
 ```
 
 ---
