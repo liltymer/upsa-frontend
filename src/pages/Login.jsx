@@ -1,26 +1,49 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { loginStudent, getDashboard, getErrorMessage } from "../services/api";
+import AuthLayout from "../components/auth/AuthLayout";
+import Icon from "../components/landing/Icon";
+
+// The API runs on a free instance that sleeps when idle; the first request can take up to a minute.
+const SLOW_AFTER_MS = 5000;
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ username: "", password: "" });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [slow, setSlow] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const slowTimer = useRef(null);
+
+  useEffect(() => () => clearTimeout(slowTimer.current), []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setFieldErrors({ ...fieldErrors, [e.target.name]: "" });
     setError("");
+  };
+
+  const validate = () => {
+    const errors = {};
+    if (!form.username.trim()) errors.username = "Enter your email or index number.";
+    if (!form.password) errors.password = "Enter your password.";
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) return;
+
     setLoading(true);
     setError("");
+    slowTimer.current = setTimeout(() => setSlow(true), SLOW_AFTER_MS);
     try {
-      const tokenData = await loginStudent(form.email, form.password);
+      const tokenData = await loginStudent(form.username.trim(), form.password);
       localStorage.setItem("token", tokenData.access_token);
       const userData = await getDashboard();
       login(tokenData.access_token, {
@@ -33,150 +56,120 @@ export default function Login() {
         programme: userData.programme,
         level: userData.level,
       });
-      if (userData.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/dashboard");
-      }
+      navigate(userData.role === "admin" ? "/admin" : "/dashboard");
     } catch (err) {
-      setError(getErrorMessage(err, "Invalid email/index number or password."));
+      // Never leave a half-finished session behind
+      localStorage.removeItem("token");
+      if (!err.response) {
+        setError("We could not reach the server. Check your internet connection and try again.");
+      } else if (err.response.status === 429) {
+        setError("Too many sign-in attempts. Please wait a few minutes and try again.");
+      } else {
+        setError(getErrorMessage(err, "The email, index number or password is incorrect."));
+      }
     } finally {
+      clearTimeout(slowTimer.current);
+      setSlow(false);
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", fontFamily: "var(--font-body)", background: "var(--navy)" }}>
+    <AuthLayout
+      topbar={
+        <>
+          <span>New to GradeIQ?</span>
+          <Link to="/register">Create an account</Link>
+        </>
+      }
+      panelTitle={<>Pick up where you <em>left off.</em></>}
+      panelBody="Sign in to see your latest GPA, how your CGPA is moving, and what you need in the semesters ahead."
+    >
+      <p className="au-eyebrow">Sign in</p>
+      <h1 className="au-title">Welcome back</h1>
+      <p className="au-subtitle">Use your email address or your UPSA index number.</p>
 
-      <div className="login-left" style={{ width: "50%", minHeight: "100vh", background: "linear-gradient(160deg, #060f2e 0%, var(--navy) 50%, #0a2050 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 52px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -180, right: -180, width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,192,5,0.08) 0%, transparent 65%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: -120, left: -120, width: 360, height: 360, borderRadius: "50%", background: "radial-gradient(circle, rgba(26,58,122,0.6) 0%, transparent 65%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, transparent, var(--gold), transparent)" }} />
-
-        <div style={{ position: "relative", zIndex: 10, textAlign: "center", width: "100%", maxWidth: 380 }} className="fade-up">
-          <div style={{ width: 108, height: 108, borderRadius: "50%", background: "rgba(255,192,5,0.08)", border: "1.5px solid rgba(255,192,5,0.2)", boxShadow: "0 0 0 8px rgba(255,192,5,0.04), 0 20px 60px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 28px", padding: 16, overflow: "hidden" }}>
-            <img src="/upsa-logo.png" alt="UPSA" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(1.15)" }} onError={(e) => { e.target.style.display = "none"; }} />
+      <form className="au-form" onSubmit={handleSubmit} noValidate>
+        {error && (
+          <div className="au-alert au-alert-error" role="alert">
+            <Icon name="alert" size={18} strokeWidth={2} />
+            <span>{error}</span>
           </div>
+        )}
 
-          <div className="badge badge-navy" style={{ margin: "0 auto 14px", display: "inline-flex" }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--gold)" }} />
-            GradeIQ UPSA
-          </div>
-
-          <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 17, color: "rgba(255,255,255,0.6)", marginBottom: 24, lineHeight: 1.4 }}>
-            University of Professional<br />Studies, Accra
-          </h2>
-
-          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 36, color: "var(--gold)", lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: 4 }}>Know Your Grade.</h1>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 36, color: "white", lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: 20 }}>Own Your Future.</h1>
-
-          <div style={{ width: 40, height: 3, background: "linear-gradient(90deg, var(--gold), var(--gold-deep))", borderRadius: 999, margin: "0 auto 20px" }} />
-
-          <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, lineHeight: 1.8, maxWidth: 300, margin: "0 auto 36px" }}>
-            Track your CGPA, simulate future grades, analyse risk and download your transcript all in one intelligent platform.
-          </p>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 40 }}>
-            {[
-              { abbr: "RISK", label: "Risk Alerts", desc: "Live analysis" },
-              { abbr: "PDF", label: "PDF Transcript", desc: "Download anytime" },
-              { abbr: "GPA", label: "GPA Tracker", desc: "Every semester" },
-              { abbr: "SIM", label: "CGPA Simulator", desc: "Plan ahead" },
-            ].map((f) => (
-              <div key={f.label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "var(--radius-md)", padding: "12px 14px", textAlign: "left" }}>
-                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 10, color: "var(--gold)", marginBottom: 5, letterSpacing: "0.05em" }}>{f.abbr}</div>
-                <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 12, color: "rgba(255,255,255,0.8)", marginBottom: 2 }}>{f.label}</p>
-                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 18 }}>
-            <p style={{ color: "rgba(255,255,255,0.15)", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "var(--font-heading)", marginBottom: 5 }}>Scholarship with Professionalism</p>
-            <p style={{ color: "rgba(255,192,5,0.25)", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "var(--font-heading)" }}>Developed by Ahenkora Joshua Owusu</p>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ flex: 1, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--bg-page)", padding: "32px 24px", position: "relative", overflowY: "auto" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 15% 15%, rgba(8,28,70,0.04) 0%, transparent 50%), radial-gradient(circle at 85% 85%, rgba(255,192,5,0.05) 0%, transparent 50%)", pointerEvents: "none" }} />
-
-        <div className="mobile-header" style={{ display: "none", alignItems: "center", gap: 10, marginBottom: 28, alignSelf: "flex-start", position: "relative", zIndex: 1 }}>
-          <div style={{ width: 36, height: 36, background: "var(--navy)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", padding: 5, overflow: "hidden" }}>
-            <img src="/upsa-logo.png" alt="UPSA" style={{ width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; }} />
-          </div>
-          <div>
-            <p style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 13, color: "var(--navy)" }}>GradeIQ UPSA</p>
-            <p style={{ fontSize: 10, color: "var(--text-muted)" }}>Smart Academic Platform</p>
-          </div>
+        <div className="au-field">
+          <label className="au-label" htmlFor="username">Email or index number</label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            className="au-input"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck="false"
+            placeholder="you@example.com or 10324631"
+            value={form.username}
+            onChange={handleChange}
+            aria-invalid={Boolean(fieldErrors.username)}
+            aria-describedby={fieldErrors.username ? "username-error" : "username-hint"}
+          />
+          {fieldErrors.username ? (
+            <p className="au-field-error" id="username-error">{fieldErrors.username}</p>
+          ) : (
+            <p className="au-hint" id="username-hint">Top-up students can use either their diploma or degree index number.</p>
+          )}
         </div>
 
-        <div style={{ width: "100%", maxWidth: 420, position: "relative", zIndex: 1 }} className="fade-up">
-          <div style={{ background: "var(--bg-card)", borderRadius: "var(--radius-xl)", padding: "40px 36px", boxShadow: "0 0 0 1px rgba(8,28,70,0.06), 0 4px 6px rgba(8,28,70,0.04), 0 20px 60px rgba(8,28,70,0.1)" }}>
-            <div style={{ width: 40, height: 3, background: "linear-gradient(90deg, var(--navy), var(--gold))", borderRadius: 999, marginBottom: 28 }} />
-
-            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 26, color: "var(--navy)", marginBottom: 6, letterSpacing: "-0.02em" }}>Welcome back</h2>
-            <p style={{ color: "var(--text-muted)", fontSize: 14, marginBottom: 28 }}>Sign in to your academic dashboard</p>
-
-            {error && (
-              <div className="alert alert-red" style={{ marginBottom: 20 }}>
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit}>
-              <div className="form-group" style={{ marginBottom: 18 }}>
-                <label className="form-label">Email or Index Number</label>
-                <input type="text" name="email" autoComplete="username" placeholder="you@gmail.com or 10324631" value={form.email} onChange={handleChange} required className="form-input" />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: 12 }}>
-                <label className="form-label">Password</label>
-                <input type="password" name="password" placeholder="Enter your password" value={form.password} onChange={handleChange} required className="form-input" />
-              </div>
-
-              <div style={{ textAlign: "right", marginBottom: 24 }}>
-                <Link to="/forgot-password" style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "var(--font-heading)", fontWeight: 600, textDecoration: "none", borderBottom: "1px solid var(--border)", paddingBottom: 1 }}>
-                  Forgot password?
-                </Link>
-              </div>
-
-              <button type="submit" disabled={loading} className="btn btn-primary btn-lg btn-full">
-                {loading ? (<><span className="spinner" />Signing in...</>) : "Sign In"}
-              </button>
-            </form>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0" }}>
-              <div style={{ flex: 1, height: 1, background: "#F3F4F6" }} />
-              <span style={{ color: "#D1D5DB", fontSize: 12 }}>or</span>
-              <div style={{ flex: 1, height: 1, background: "#F3F4F6" }} />
-            </div>
-
-            <p style={{ textAlign: "center", fontSize: 14, color: "var(--text-muted)" }}>
-              No account yet?{" "}
-              <Link to="/register" style={{ color: "var(--navy)", fontFamily: "var(--font-heading)", fontWeight: 800, borderBottom: "2px solid var(--gold)", paddingBottom: 1 }}>
-                Create one here
-              </Link>
-            </p>
+        <div className="au-field">
+          <div className="au-label-row">
+            <label className="au-label" htmlFor="password">Password</label>
+            <Link to="/forgot-password" className="au-link">Forgot password?</Link>
           </div>
-
-          <p style={{ textAlign: "center", fontSize: 11, color: "#C8C9D0", marginTop: 20, lineHeight: 1.7, fontFamily: "var(--font-heading)" }}>
-            University of Professional Studies, Accra<br />
-            2026 GradeIQ UPSA - Developed by Ahenkora Joshua Owusu
-          </p>
+          <div className="au-input-wrap">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              className="au-input"
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              value={form.password}
+              onChange={handleChange}
+              aria-invalid={Boolean(fieldErrors.password)}
+              aria-describedby={fieldErrors.password ? "password-error" : undefined}
+            />
+            <button
+              type="button"
+              className="au-reveal"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+          {fieldErrors.password && <p className="au-field-error" id="password-error">{fieldErrors.password}</p>}
         </div>
-      </div>
 
-      <style>{`
-        @media (max-width: 768px) {
-          .login-left { display: none !important; }
-          .mobile-header { display: flex !important; }
-        }
-        @media (min-width: 769px) {
-          .login-left { display: flex !important; }
-          .mobile-header { display: none !important; }
-        }
-      `}</style>
-    </div>
+        <button type="submit" className="au-submit" disabled={loading}>
+          {loading && <span className="au-spinner" aria-hidden="true" />}
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
+
+        {slow && (
+          <div className="au-alert au-alert-info" role="status">
+            <Icon name="info" size={18} strokeWidth={2} />
+            <span>The server is starting up after a quiet period. This can take up to a minute, please keep this page open.</span>
+          </div>
+        )}
+      </form>
+
+      <div className="au-divider">New to GradeIQ UPSA?</div>
+      <Link to="/register" className="au-secondary">Create an account</Link>
+
+      <p className="au-note">
+        Having trouble signing in? Email <a className="au-link" href="mailto:ahenkorajoshuaowusu@outlook.com">ahenkorajoshuaowusu@outlook.com</a>
+      </p>
+    </AuthLayout>
   );
 }
