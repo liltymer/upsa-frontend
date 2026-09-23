@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { loginStudent, getDashboard, getErrorMessage } from "../services/api";
+import { authErrorMessage, homeFor, startSession } from "../services/session";
 import AuthLayout from "../components/auth/AuthLayout";
 import Icon from "../components/landing/Icon";
+import { PasswordField } from "../components/auth/fields";
 
 // The API runs on a free instance that sleeps when idle; the first request can take up to a minute.
 const SLOW_AFTER_MS = 5000;
@@ -11,12 +12,12 @@ const SLOW_AFTER_MS = 5000;
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const justRegistered = Boolean(useLocation().state?.registered);
   const [form, setForm] = useState({ username: "", password: "" });
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [slow, setSlow] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const slowTimer = useRef(null);
 
   useEffect(() => () => clearTimeout(slowTimer.current), []);
@@ -43,30 +44,10 @@ export default function Login() {
     setError("");
     slowTimer.current = setTimeout(() => setSlow(true), SLOW_AFTER_MS);
     try {
-      const tokenData = await loginStudent(form.username.trim(), form.password);
-      localStorage.setItem("token", tokenData.access_token);
-      const userData = await getDashboard();
-      login(tokenData.access_token, {
-        name: userData.name,
-        index_number: userData.index_number,
-        cgpa: userData.cgpa,
-        classification: userData.classification,
-        role: userData.role,
-        academic_year: userData.academic_year,
-        programme: userData.programme,
-        level: userData.level,
-      });
-      navigate(userData.role === "admin" ? "/admin" : "/dashboard");
+      const userData = await startSession(login, form.username.trim(), form.password);
+      navigate(homeFor(userData));
     } catch (err) {
-      // Never leave a half-finished session behind
-      localStorage.removeItem("token");
-      if (!err.response) {
-        setError("We could not reach the server. Check your internet connection and try again.");
-      } else if (err.response.status === 429) {
-        setError("Too many sign-in attempts. Please wait a few minutes and try again.");
-      } else {
-        setError(getErrorMessage(err, "The email, index number or password is incorrect."));
-      }
+      setError(authErrorMessage(err, "The email, index number or password is incorrect."));
     } finally {
       clearTimeout(slowTimer.current);
       setSlow(false);
@@ -90,6 +71,12 @@ export default function Login() {
       <p className="au-subtitle">Use your email address or your UPSA index number.</p>
 
       <form className="au-form" onSubmit={handleSubmit} noValidate>
+        {justRegistered && !error && (
+          <div className="au-alert au-alert-success" role="status">
+            <Icon name="check" size={18} strokeWidth={2} />
+            <span>Your account has been created. Sign in to continue.</span>
+          </div>
+        )}
         {error && (
           <div className="au-alert au-alert-error" role="alert">
             <Icon name="alert" size={18} strokeWidth={2} />
@@ -120,36 +107,16 @@ export default function Login() {
           )}
         </div>
 
-        <div className="au-field">
-          <div className="au-label-row">
-            <label className="au-label" htmlFor="password">Password</label>
-            <Link to="/forgot-password" className="au-link">Forgot password?</Link>
-          </div>
-          <div className="au-input-wrap">
-            <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              className="au-input"
-              autoComplete="current-password"
-              placeholder="Enter your password"
-              value={form.password}
-              onChange={handleChange}
-              aria-invalid={Boolean(fieldErrors.password)}
-              aria-describedby={fieldErrors.password ? "password-error" : undefined}
-            />
-            <button
-              type="button"
-              className="au-reveal"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              aria-pressed={showPassword}
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </div>
-          {fieldErrors.password && <p className="au-field-error" id="password-error">{fieldErrors.password}</p>}
-        </div>
+        <PasswordField
+          id="password"
+          label="Password"
+          autoComplete="current-password"
+          placeholder="Enter your password"
+          value={form.password}
+          onChange={handleChange}
+          error={fieldErrors.password}
+          labelAside={<Link to="/forgot-password" className="au-link">Forgot password?</Link>}
+        />
 
         <button type="submit" className="au-submit" disabled={loading}>
           {loading && <span className="au-spinner" aria-hidden="true" />}
