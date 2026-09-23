@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Area,
   Bar,
@@ -35,15 +36,25 @@ const SHORT_BAND = {
 };
 const bandFor = (value, bands) => bands.find((b) => value >= b.min) || bands[bands.length - 1];
 
-function TrendTooltip({ active, payload, bands }) {
-  if (!active || !payload?.length) return null;
-  const row = payload[0].payload;
+/** The figures for one semester, shown above the chart instead of over it. */
+function TrendReadout({ row, bands, isLatest }) {
   return (
-    <div className="db-tooltip">
-      <p className="db-tooltip-title">{row.title}</p>
-      <p><span className="db-key" style={{ background: SERIES.gpa }} />Semester GPA <strong>{row.gpa.toFixed(2)}</strong></p>
-      <p><span className="db-key db-key-line" style={{ background: SERIES.cgpa }} />CGPA <strong>{row.cgpa.toFixed(2)}</strong></p>
-      <p className="db-tooltip-muted">CGPA in {bandFor(row.cgpa, bands)?.label} · {row.credits} credits</p>
+    <div className="db-readout" aria-live="polite">
+      <p className="db-readout-when">{isLatest ? "Latest" : "Selected"}: {row.title}</p>
+      <div className="db-readout-row">
+        <div className="db-readout-stat">
+          <span className="db-key db-key-line" style={{ background: SERIES.cgpa }} />
+          <span className="db-readout-name">CGPA</span>
+          <strong>{row.cgpa.toFixed(2)}</strong>
+          <span className="db-readout-class">{bandFor(row.cgpa, bands)?.label}</span>
+        </div>
+        <div className="db-readout-stat">
+          <span className="db-key db-key-ring" style={{ borderColor: SERIES.gpa }} />
+          <span className="db-readout-name">Semester GPA</span>
+          <strong>{row.gpa.toFixed(2)}</strong>
+          <span className="db-readout-class">{row.credits} credits</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -73,51 +84,55 @@ const lastDot = (count, color) => function LastDot({ cx, cy, index }) {
 
 /** Running CGPA as the headline line, semester GPA beside it, class boundaries on the axis. */
 export function TrendChart({ history, bands }) {
+  const [active, setActive] = useState(null);
   const data = history.map((h) => ({ ...h, label: short(h.title) }));
-  const lowest = Math.min(...data.flatMap((d) => [d.gpa, d.cgpa]));
-  const floor = Math.max(0, Math.floor((lowest - 0.3) * 2) / 2);
-  // Gridlines only where a class starts, plus the ends of the scale
-  const bounds = bands.map((b) => b.min).filter((m) => m > floor && m < 4);
-  const ticks = [...new Set([floor, ...bounds, 4].map((t) => Number(t.toFixed(2))))].sort((a, b) => a - b);
-  const last = data[data.length - 1];
+  const values = data.flatMap((d) => [d.gpa, d.cgpa]);
+  const floor = Math.max(0, Math.floor((Math.min(...values) - 0.3) * 2) / 2);
+  // Stop one class boundary above the best result so movement is easy to see
+  const highest = Math.max(...values);
+  const top = bands.map((b) => b.min).filter((m) => m > highest + 0.1).sort((a, b) => a - b)[0] ?? 4;
+  const bounds = bands.map((b) => b.min).filter((m) => m > floor && m < top);
+  const ticks = [...new Set([floor, ...bounds, top].map((t) => Number(t.toFixed(2))))].sort((a, b) => a - b);
+
+  const lastIndex = data.length - 1;
+  const shown = data[active ?? lastIndex];
+  const track = (state) => {
+    const i = Number(state?.activeTooltipIndex);
+    setActive(Number.isInteger(i) && i >= 0 && i < data.length ? i : null);
+  };
 
   return (
     <figure className="db-chart" aria-label="Semester GPA and CGPA over time">
-      <ul className="db-legend">
-        <li><span className="db-key db-key-line" style={{ background: SERIES.cgpa }} />CGPA{last && <strong>{last.cgpa.toFixed(2)}</strong>}</li>
-        <li><span className="db-key db-key-ring" style={{ borderColor: SERIES.gpa }} />Semester GPA{last && <strong>{last.gpa.toFixed(2)}</strong>}</li>
-      </ul>
+      {shown && <TrendReadout row={shown} bands={bands} isLatest={(active ?? lastIndex) === lastIndex} />}
       <div className="db-chart-area">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 14, right: 18, bottom: 0, left: 0 }}>
+          <ComposedChart data={data} margin={{ top: 12, right: 18, bottom: 0, left: 0 }}
+            onMouseMove={track} onClick={track} onMouseLeave={() => setActive(null)}>
             <defs>
               <linearGradient id="db-cgpa-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ffc005" stopOpacity={0.28} />
+                <stop offset="0%" stopColor="#ffc005" stopOpacity={0.3} />
                 <stop offset="100%" stopColor="#ffc005" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid stroke={GRID} strokeDasharray="4 6" vertical={false} />
             <XAxis dataKey="label" tick={{ fill: AXIS, fontSize: 12 }} tickLine={false} axisLine={false}
               padding={{ left: 20, right: 20 }} dy={8} />
-            <YAxis domain={[floor, 4]} ticks={ticks} interval={0} tick={classTick(bands)} width={112}
-              tickLine={false} axisLine={false} />
-            <Tooltip content={<TrendTooltip bands={bands} />} cursor={{ stroke: "#c3cbdb", strokeWidth: 1, strokeDasharray: "3 3" }} />
+            <YAxis domain={[floor, top]} ticks={ticks} interval={0} tick={classTick(bands)} width={112}
+              tickLine={false} axisLine={false} allowDataOverflow />
+            {/* Keeps the hover cursor and highlighted points; the figures go in the readout */}
+            <Tooltip content={() => null} cursor={{ stroke: "#c3cbdb", strokeWidth: 1, strokeDasharray: "3 3" }} />
             <Area type="monotone" dataKey="cgpa" stroke="none" fill="url(#db-cgpa-fill)" baseValue={floor}
               isAnimationActive={false} activeDot={false} />
             <Line type="monotone" dataKey="gpa" stroke={SERIES.gpa} strokeWidth={2}
-              dot={lastDot(data.length, SERIES.gpa)} activeDot={{ r: 6, strokeWidth: 3, stroke: "#fff", fill: SERIES.gpa }}
+              dot={lastDot(data.length, SERIES.gpa)} activeDot={{ r: 6.5, strokeWidth: 3, stroke: "#fff", fill: SERIES.gpa }}
               isAnimationActive={false} />
             <Line type="monotone" dataKey="cgpa" stroke={SERIES.cgpa} strokeWidth={3}
-              dot={lastDot(data.length, SERIES.cgpa)} activeDot={{ r: 6.5, strokeWidth: 3, stroke: "#fff", fill: SERIES.cgpa }}
+              dot={lastDot(data.length, SERIES.cgpa)} activeDot={{ r: 7, strokeWidth: 3, stroke: "#fff", fill: SERIES.cgpa }}
               isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-      {last && (
-        <figcaption className="db-chart-caption">
-          Your CGPA is in <strong>{bandFor(last.cgpa, bands)?.label}</strong>. Tap or hover on a semester to see its figures.
-        </figcaption>
-      )}
+      <figcaption className="db-chart-caption">Tap or hover on a semester to see its figures above.</figcaption>
     </figure>
   );
 }
