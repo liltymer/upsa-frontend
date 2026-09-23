@@ -76,6 +76,55 @@ const PATHS = {
     </>
   ),
   dot: <circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none" />,
+  home: (
+    <>
+      <path d="M4 11l8-6 8 6" />
+      <path d="M6 10v9h12v-9" />
+      <path d="M10 19v-5h4v5" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z" />
+      <path d="M9 12l2 2 4-4" />
+    </>
+  ),
+  user: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+    </>
+  ),
+  logout: (
+    <>
+      <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" />
+      <path d="M10 16l-4-4 4-4" />
+      <path d="M6 12h10" />
+    </>
+  ),
+  sidebar: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M9 4v16" />
+    </>
+  ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="19" cy="12" r="1.2" fill="currentColor" />
+    </>
+  ),
+  arrowRight: <path d="M5 12h14M13 6l6 6-6 6" />,
+  arrowUp: <path d="M12 19V5M6 11l6-6 6 6" />,
+  arrowDownRight: <path d="M7 7l10 10M17 9v8H9" />,
+  bell: (
+    <>
+      <path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z" />
+      <path d="M10 20a2 2 0 0 0 4 0" />
+    </>
+  ),
+  pencil: <path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
 };

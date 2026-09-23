@@ -1,786 +1,389 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { getDashboard, getRisk, getTrends } from "../services/api";
-import API from "../services/api";
+import "../components/dashboard/dashboard.css";
+import Icon from "../components/landing/Icon";
+import { GradeSpreadChart, TrendChart } from "../components/dashboard/charts";
 import { useProgrammes } from "../context/ProgrammeContext";
-import { classStyle as styleForClass, classifyWithBands, shortSemester } from "../utils/academic";
+import { getActiveAnnouncements, getDashboard, getInsights } from "../services/api";
+import { classStyle } from "../utils/academic";
 
-export default function Dashboard() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { setSelectedId } = useProgrammes();
-  const [dashboard, setDashboard] = useState(null);
-  const [risk, setRisk] = useState(null);
-  const [trends, setTrends] = useState(null);
-  const [announcements, setAnnouncements] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+const ACTION_ICONS = { start: "results", urgent: "alert", target: "target", trend: "chart", area: "layers", course: "results", update: "results" };
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const [dashData, riskData, trendData, annData] = await Promise.all([
-          getDashboard(),
-          getRisk(),
-          getTrends(),
-          API.get("/announcements/active"),
-        ]);
-        setDashboard(dashData);
-        setRisk(riskData);
-        setTrends(trendData);
-        setAnnouncements(annData.data || []);
-      } catch {
-        setError("Failed to load dashboard. Please refresh.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
-  }, []);
+function greeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
-  if (loading) return (
-    <div className="loading-screen">
-      <div className="spinner spinner-lg spinner-dark" />
-      <p>Loading your dashboard...</p>
-    </div>
-  );
-
-  if (error) return (
-    <div className="loading-screen">
-      <div className="alert alert-red" style={{ maxWidth: 400 }}>
-        {error}
+/** Position within the current class band, drawn as a simple track. */
+function BandMeter({ summary }) {
+  const { cgpa, band_min: min, band_max: max, next_class: next, classification } = summary;
+  const span = Math.max(max - min, 0.01);
+  const pct = Math.min(Math.max(((cgpa - min) / span) * 100, 0), 100);
+  return (
+    <div className="db-meter">
+      <div className="db-meter-track" role="img"
+        aria-label={next ? `${cgpa.toFixed(2)} within ${classification}, ${(max - cgpa).toFixed(2)} below ${next}` : `${cgpa.toFixed(2)}, top class`}>
+        <span className="db-meter-fill" style={{ width: `${pct}%` }} />
+        <span className="db-meter-dot" style={{ left: `${pct}%` }} />
+      </div>
+      <div className="db-meter-scale">
+        <span>{classification} {min.toFixed(2)}</span>
+        <span>{next ? `${next} ${max.toFixed(2)}` : "4.00"}</span>
       </div>
     </div>
   );
+}
 
-  const cgpa = dashboard?.cgpa ?? 0;
+function TargetEditor({ target, estimate, onChange }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const credits = target?.remaining_credits ?? estimate.remaining_credits;
 
-  // Uses the programme's own bands — a diploma aims for Distinction, a degree for First Class
-  const getMotivation = () => {
-    const analysis = risk?.risk_analysis;
-    const label = dashboard?.classification;
-    if (!analysis || label === "No results yet") {
-      return { msg: "Add your results to see where you stand.", type: "blue" };
+  const save = (e) => {
+    e.preventDefault();
+    const n = Number(value);
+    if (n >= 1 && n <= 300) {
+      onChange(n);
+      setEditing(false);
     }
-    if (!analysis.next_class) return { msg: `Outstanding! You are on track for ${label}. Keep it up!`, type: "green" };
-    if (analysis.risk_level === "High") return { msg: "Critical: Please seek academic counseling immediately.", type: "red" };
-    const type = analysis.risk_level === "Low" ? "gold" : "blue";
-    return { msg: `${analysis.gap_to_next_class.toFixed(2)} points to ${analysis.next_class}. Stay focused!`, type };
-  };
-
-  const getRiskStyle = (level) => {
-    if (level === "High") return { color: "var(--red)", bg: "var(--red-bg)", border: "var(--red-border)", dot: "#EF4444" };
-    if (level === "Medium") return { color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)", dot: "#F59E0B" };
-    return { color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)", dot: "#22C55E" };
-  };
-
-  const getTrendStyle = (trend) => {
-    if (trend === "Improving") return { color: "var(--green)", bg: "var(--green-bg)" };
-    if (trend === "Declining") return { color: "var(--red)", bg: "var(--red-bg)" };
-    return { color: "var(--amber)", bg: "var(--amber-bg)" };
-  };
-
-
-  const getPriorityStyle = (priority) => {
-    if (priority === "urgent") return { color: "var(--red)", bg: "var(--red-bg)", border: "var(--red-border)", label: "Urgent" };
-    if (priority === "important") return { color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)", label: "Important" };
-    return { color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)", label: "Notice" };
-  };
-
-  const motivation = getMotivation();
-  const riskStyle = getRiskStyle(risk?.risk_analysis?.risk_level);
-  const trendStyle = getTrendStyle(trends?.trend_analysis?.trend);
-  const classStyle = styleForClass(dashboard?.classification);
-  const bands = dashboard?.classification_bands || [];
-  const otherProgrammes = dashboard?.other_programmes || [];
-
-  const openProgramme = (enrollmentId, path) => {
-    setSelectedId(enrollmentId);
-    navigate(path);
-  };
-
-  const alertTypeMap = {
-    green: "alert-green", gold: "alert-gold",
-    blue: "alert-gold", amber: "alert-gold", red: "alert-red",
-  };
-
-  const features = [
-    { label: "My Results", sub: "Add, edit and manage your semester results", path: "/results", color: "var(--blue-bg)", border: "var(--blue-border)" },
-    { label: "GPA Tracker", sub: "View your GPA history and semester breakdown", path: "/gpa", color: "var(--green-bg)", border: "var(--green-border)" },
-    { label: "Transcript", sub: "View full academic record and download PDF", path: "/transcript", color: "var(--orange-bg)", border: "var(--orange-border)" },
-    { label: "GPA Simulator", sub: "Simulate future CGPA and calculate target grades", path: "/simulator", color: "#FDF4FF", border: "#E9D5FF" },
-    { label: "Risk Analysis", sub: "Check your academic risk level and alerts", path: "/risk", color: "var(--amber-bg)", border: "var(--amber-border)" },
-  ];
-
-  const featureIcons = {
-    "/results": (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14,2 14,8 20,8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <polyline points="10,9 9,9 8,9"/>
-      </svg>
-    ),
-    "/gpa": (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/>
-        <line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6" y1="20" x2="6" y2="14"/>
-      </svg>
-    ),
-    "/transcript": (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-      </svg>
-    ),
-    "/simulator": (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12,6 12,12 16,14"/>
-      </svg>
-    ),
-    "/risk": (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/>
-        <line x1="12" y1="17" x2="12.01" y2="17"/>
-      </svg>
-    ),
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "var(--bg-page)",
-      fontFamily: "var(--font-body)",
-    }}>
+    <div className="db-target-credits">
+      {editing ? (
+        <form onSubmit={save} className="db-inline-form">
+          <label htmlFor="remaining" className="db-sr">Credits left to take</label>
+          <input id="remaining" type="number" min="1" max="300" inputMode="numeric" autoFocus
+            value={value} onChange={(e) => setValue(e.target.value)} placeholder={String(credits)} />
+          <button type="submit" className="db-btn db-btn-sm">Update</button>
+          <button type="button" className="db-link" onClick={() => setEditing(false)}>Cancel</button>
+        </form>
+      ) : credits === 0 && target?.remaining_credits_estimated !== false ? (
+        <p>
+          Still taking courses on this programme?{" "}
+          <button type="button" className="db-link" onClick={() => { setValue(""); setEditing(true); }}>
+            Enter the credits you have left
+          </button>
+        </p>
+      ) : (
+        <p>
+          Based on <strong>{credits} credits</strong> left
+          {target?.remaining_credits_estimated !== false ? " (estimated from your programme)" : ""}.{" "}
+          <button type="button" className="db-link" onClick={() => { setValue(String(credits)); setEditing(true); }}>
+            Change
+          </button>
+          {target?.remaining_credits_estimated === false && (
+            <>
+              {" "}
+              <button type="button" className="db-link" onClick={() => onChange(null)}>Use estimate</button>
+            </>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
 
-      {/* ================================
-          HERO HEADER
-      ================================ */}
-      <div className="page-header">
-        <div className="header-inner">
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr auto",
-            gap: 24,
-            alignItems: "center",
-          }} className="dash-hero">
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const { selectedEnrollmentId, setSelectedId } = useProgrammes();
+  const [overview, setOverview] = useState(null);
+  const [insights, setInsights] = useState(null);
+  const [announcements, setAnnouncements] = useState([]);
+  const [remainingCredits, setRemainingCredits] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-            <div className="fade-up">
-              <div className="badge badge-navy" style={{ marginBottom: 16 }}>
-                <span style={{
-                  width: 6, height: 6,
-                  borderRadius: "50%",
-                  background: "var(--gold)",
-                }} />
-                Academic Year {dashboard?.academic_year || user?.academic_year}
-                {dashboard?.programme ? ` · ${dashboard.programme} · Level ${dashboard.level}` : ""}
-              </div>
+  const load = useCallback(async () => {
+    setError("");
+    try {
+      const [dash, ins] = await Promise.all([
+        getDashboard(selectedEnrollmentId),
+        getInsights(selectedEnrollmentId, remainingCredits),
+      ]);
+      setOverview(dash);
+      setInsights(ins);
+    } catch {
+      setError("We could not load your dashboard. Check your connection and refresh the page.");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedEnrollmentId, remainingCredits]);
 
-              <h1 style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 800,
-                fontSize: "clamp(22px, 3vw, 32px)",
-                color: "white",
-                marginBottom: 4,
-                lineHeight: 1.2,
-              }}>
-                {user?.name || dashboard?.name}
-              </h1>
+  useEffect(() => { load(); }, [load]);
 
-              <p style={{
-                color: "rgba(255,255,255,0.4)",
-                fontSize: 13,
-                fontFamily: "var(--font-heading)",
-                marginBottom: 20,
-              }}>
-                {dashboard?.index_number || user?.index_number}
-              </p>
+  useEffect(() => {
+    getActiveAnnouncements().then(setAnnouncements).catch(() => setAnnouncements([]));
+  }, []);
 
-              <div
-                className={`alert ${alertTypeMap[motivation.type]}`}
-                style={{ maxWidth: 480, display: "inline-flex" }}
-              >
-                <span>{motivation.msg}</span>
-              </div>
-            </div>
+  if (loading) {
+    return (
+      <div className="db db-loading" role="status">
+        <span className="db-spinner" aria-hidden="true" />
+        <p>Loading your dashboard...</p>
+      </div>
+    );
+  }
 
-            <div className="fade-up-1 dash-cgpa-badge" style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,192,5,0.2)",
-              borderRadius: "var(--radius-xl)",
-              padding: "28px 36px",
-              textAlign: "center",
-              backdropFilter: "blur(10px)",
-              minWidth: 180,
-            }}>
-              <p style={{
-                fontSize: 10, fontWeight: 700,
-                color: "rgba(255,255,255,0.4)",
-                textTransform: "uppercase",
-                letterSpacing: "0.15em",
-                fontFamily: "var(--font-heading)",
-                marginBottom: 8,
-              }}>
-                Cumulative GPA
-              </p>
-              <p style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 900,
-                fontSize: "clamp(48px, 6vw, 68px)",
-                color: "var(--gold)",
-                lineHeight: 1,
-                marginBottom: 10,
-              }}>
-                {cgpa.toFixed(2)}
-              </p>
-              <span style={{
-                background: classStyle.bg,
-                color: classStyle.color,
-                border: `1px solid ${classStyle.border}`,
-                fontFamily: "var(--font-heading)",
-                fontWeight: 700, fontSize: 12,
-                padding: "5px 14px",
-                borderRadius: "var(--radius-full)",
-                display: "inline-block",
-              }}>
-                {classStyle.label}
-              </span>
-            </div>
-
-          </div>
+  if (error || !overview || !insights) {
+    return (
+      <div className="db">
+        <div className="db-card db-error" role="alert">
+          <Icon name="alert" size={22} />
+          <p>{error || "Something went wrong."}</p>
+          <button type="button" className="db-btn" onClick={() => { setLoading(true); load(); }}>Try again</button>
         </div>
       </div>
+    );
+  }
 
-      {/* ================================
-          STAT CARDS
-      ================================ */}
-      <div className="overlap-section">
-        <div className="grid-3">
+  const s = insights.summary;
+  const firstName = (overview.name || "").split(/\s+/)[0];
+  const cls = classStyle(s.classification || "No results yet");
+  const openProgramme = (id, path) => { setSelectedId(id); navigate(path); };
 
-          <div className="stat-card card fade-up-1">
-            <div className="stat-icon" style={{
-              background: dashboard?.academic_standing === "Good Standing"
-                ? "var(--green-bg)" : "var(--red-bg)",
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                stroke={dashboard?.academic_standing === "Good Standing" ? "var(--green)" : "var(--red)"}
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {dashboard?.academic_standing === "Good Standing"
-                  ? <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></>
-                  : <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>
-                }
-              </svg>
-            </div>
-            <div>
-              <p className="stat-label" style={{ color: "var(--text-muted)" }}>
-                Academic Standing
-              </p>
-              <p className="stat-value" style={{
-                fontSize: 18,
-                color: dashboard?.academic_standing === "Good Standing"
-                  ? "var(--green)" : "var(--red)",
-              }}>
-                {dashboard?.academic_standing}
-              </p>
-              <p className="stat-sub" style={{ color: "var(--text-muted)" }}>
-                {dashboard?.academic_standing === "Good Standing"
-                  ? "No issues detected" : "Action required"}
-              </p>
-            </div>
-          </div>
-
-          <div className="card-dark stat-card fade-up-2" style={{
-            borderRadius: "var(--radius-lg)",
-            boxShadow: "var(--shadow-navy)",
-          }}>
-            <div className="stat-icon" style={{
-              background: "rgba(255,192,5,0.15)",
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12,6 12,12 16,14"/>
-              </svg>
-            </div>
-            <div>
-              <p className="stat-label" style={{ color: "rgba(255,255,255,0.4)" }}>
-                Gap to Next Class
-              </p>
-              <p className="stat-value" style={{
-                fontSize: 32, color: "var(--gold)",
-              }}>
-                {risk?.risk_analysis?.gap_to_next_class != null
-                  ? `+${risk.risk_analysis.gap_to_next_class}`
-                  : "—"}
-              </p>
-              <p className="stat-sub" style={{ color: "rgba(255,255,255,0.4)" }}>
-                Needed for {risk?.risk_analysis?.next_class || "Top Class"}
-              </p>
-            </div>
-          </div>
-
-          <div className="stat-card card fade-up-3">
-            <div className="stat-icon" style={{ background: trendStyle.bg }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                stroke={trendStyle.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {trends?.trend_analysis?.trend === "Improving"
-                  ? <><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></>
-                  : trends?.trend_analysis?.trend === "Declining"
-                  ? <><polyline points="23,18 13.5,8.5 8.5,13.5 1,6"/><polyline points="17,18 23,18 23,12"/></>
-                  : <line x1="5" y1="12" x2="19" y2="12"/>
-                }
-              </svg>
-            </div>
-            <div>
-              <p className="stat-label" style={{ color: "var(--text-muted)" }}>
-                GPA Trend
-              </p>
-              <p className="stat-value" style={{
-                fontSize: 18, color: trendStyle.color,
-              }}>
-                {trends?.trend_analysis?.trend || "No Data"}
-              </p>
-              <p className="stat-sub" style={{ color: "var(--text-muted)" }}>
-                {trends?.trend_analysis?.latest_gpa
-                  ? `Latest: ${trends.trend_analysis.latest_gpa.toFixed(2)}`
-                  : "Add more results"}
-              </p>
-            </div>
-          </div>
-
+  return (
+    <div className="db">
+      {/* ---------- Header ---------- */}
+      <header className="db-header">
+        <div>
+          <p className="db-eyebrow">{greeting()}, {firstName}</p>
+          <h1 className="db-title">Your academic overview</h1>
+          <p className="db-meta">
+            {overview.programme} · Level {overview.level} · {overview.index_number || "No index number"}
+            {overview.status === "completed" ? " · Completed programme" : ""}
+          </p>
         </div>
-      </div>
+        <Link to="/results" className="db-btn"><Icon name="results" size={18} /> Add results</Link>
+      </header>
 
-      {/* ================================
-          MAIN CONTENT
-      ================================ */}
-      <div className="page-content" style={{ marginTop: 28 }}>
+      {overview.needs_review && (
+        <div className="db-banner db-banner-warn">
+          <Icon name="alert" size={20} />
+          <p>We separated your diploma results from your degree so each has its own CGPA. Please confirm your programme details.</p>
+          <Link to="/profile" className="db-link">Review programmes</Link>
+        </div>
+      )}
 
-        {/* ================================
-            PROGRAMME NEEDS REVIEW
-            (created when diploma results were separated from a degree)
-        ================================ */}
-        {dashboard?.needs_review && (
-          <div className="alert alert-gold" style={{ marginBottom: 20 }}>
-            We separated your diploma results from your degree so each has its own CGPA.
-            Please confirm your programme details and add your diploma index number.{" "}
-            <Link to="/profile" style={{ fontWeight: 700, textDecoration: "underline" }}>Review programmes →</Link>
-          </div>
-        )}
+      {announcements.map((a) => (
+        <div key={a.id} className={`db-banner db-banner-${a.priority === "urgent" ? "urgent" : "info"}`}>
+          <Icon name="bell" size={20} />
+          <p><strong>{a.title}.</strong> {a.message}</p>
+        </div>
+      ))}
 
-        {/* ================================
-            ACADEMIC HISTORY — previous programmes (e.g. diploma before a top-up)
-        ================================ */}
-        {otherProgrammes.length > 0 && (
-          <div className="card" style={{ marginBottom: 24 }}>
-            <h3 className="section-title">Academic History</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
-              {otherProgrammes.map((p) => {
-                const ps = styleForClass(p.classification);
-                return (
-                  <div key={p.id} style={{ border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", padding: 16 }}>
-                    <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 14, color: "var(--navy)" }}>
-                      {p.programme}
-                    </p>
-                    <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "2px 0 10px" }}>
-                      {p.index_number || "Index number not added"} · {p.status === "completed" ? "Completed" : "Active"}
-                    </p>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 24, color: "var(--navy)" }}>
-                        {p.cgpa.toFixed(2)}
-                      </span>
-                      {p.classification && (
-                        <span className="badge" style={{ background: ps.bg, color: ps.color, border: `1px solid ${ps.border}` }}>
-                          {p.classification}
-                        </span>
-                      )}
+      {!insights.has_results ? (
+        <section className="db-card db-empty">
+          <div className="db-empty-icon"><Icon name="results" size={30} /></div>
+          <h2>Start with your result slip</h2>
+          <p>Add each course with its credit hours and grade. Your GPA, CGPA, class, strengths and weaknesses will appear here straight away.</p>
+          <Link to="/results" className="db-btn">Add your first results</Link>
+        </section>
+      ) : (
+        <>
+          {/* ---------- Where you stand ---------- */}
+          <section className="db-stats" aria-label="Where you stand">
+            <article className="db-card db-standing">
+              <p className="db-label">Cumulative GPA</p>
+              <div className="db-cgpa-row">
+                <strong className="db-cgpa">{s.cgpa.toFixed(2)}</strong>
+                <span className="db-pill" style={{ color: cls.color, background: cls.bg, borderColor: cls.border }}>{s.classification}</span>
+              </div>
+              <BandMeter summary={s} />
+              <p className="db-note">
+                {s.next_class
+                  ? <><strong>{s.gap_to_next_class.toFixed(2)}</strong> to {s.next_class}</>
+                  : "You are in the top class. Keep it steady."}
+              </p>
+            </article>
+
+            <article className="db-card db-stat">
+              <p className="db-label">Latest semester</p>
+              <strong className="db-stat-value">{s.latest_gpa.toFixed(2)}</strong>
+              <p className="db-stat-sub">{s.latest_title}</p>
+              {s.direction && (
+                <p className={`db-trend db-trend-${s.direction}`}>
+                  <Icon name={s.direction === "declining" ? "arrowDownRight" : s.direction === "improving" ? "arrowUp" : "arrowRight"} size={16} strokeWidth={2.4} />
+                  {s.direction === "improving" && `Up from ${s.previous_gpa.toFixed(2)}`}
+                  {s.direction === "declining" && `Down from ${s.previous_gpa.toFixed(2)}`}
+                  {s.direction === "steady" && "Same as the semester before"}
+                </p>
+              )}
+            </article>
+
+            <article className="db-card db-stat">
+              <p className="db-label">Progress</p>
+              <strong className="db-stat-value">{s.credits_completed}</strong>
+              <p className="db-stat-sub">credits from {s.courses_completed} courses</p>
+              <div className="db-progress" aria-label={`${insights.estimate.semesters_done} of ${insights.estimate.total_semesters} semesters recorded`}>
+                {Array.from({ length: insights.estimate.total_semesters }, (_, i) => (
+                  <span key={i} className={i < insights.estimate.semesters_done ? "on" : ""} />
+                ))}
+              </div>
+              <p className="db-note">{insights.estimate.semesters_done} of {insights.estimate.total_semesters} semesters recorded</p>
+            </article>
+          </section>
+
+          {/* ---------- Next steps ---------- */}
+          {insights.actions.length > 0 && (
+            <section className="db-card" aria-labelledby="db-next">
+              <div className="db-card-head">
+                <h2 id="db-next" className="db-h2">What to do next</h2>
+              </div>
+              <ol className="db-actions">
+                {insights.actions.map((a) => (
+                  <li key={a.title} className={`db-action db-action-${a.kind}`}>
+                    <span className="db-action-icon"><Icon name={ACTION_ICONS[a.kind] || "arrowRight"} size={20} /></span>
+                    <div>
+                      <h3>{a.title}</h3>
+                      <p>{a.body}</p>
                     </div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                      <button type="button" className="btn btn-outline btn-sm" onClick={() => openProgramme(p.id, "/results")}>
-                        Results
-                      </button>
-                      <button type="button" className="btn btn-outline btn-sm" onClick={() => openProgramme(p.id, "/transcript")}>
-                        Transcript
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                    <Link to={a.link} className="db-action-link" aria-label={`Open: ${a.title}`}><Icon name="arrowRight" size={18} /></Link>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
 
-        {/* ================================
-            ANNOUNCEMENTS BANNER
-        ================================ */}
-        {announcements.length > 0 && (
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-            marginBottom: 28,
-          }}>
-            {announcements.map((ann) => {
-              const ps = getPriorityStyle(ann.priority);
+          {/* ---------- Trend and target ---------- */}
+          <div className="db-grid db-grid-wide">
+            <section className="db-card" aria-labelledby="db-trend">
+              <div className="db-card-head">
+                <h2 id="db-trend" className="db-h2">GPA over time</h2>
+                <Link to="/gpa" className="db-link">Details</Link>
+              </div>
+              <TrendChart history={insights.history} bands={insights.classification_bands} />
+            </section>
+
+            <section className="db-card db-target" aria-labelledby="db-target">
+              <div className="db-card-head">
+                <h2 id="db-target" className="db-h2">Your next class</h2>
+              </div>
+              {!s.next_class ? (
+                <p className="db-body">You are already in the highest class. Keep your semester GPAs at this level to hold it.</p>
+              ) : insights.target ? (
+                insights.target.achievable ? (
+                  <>
+                    <p className="db-target-lead">To reach <strong>{insights.target.target_class}</strong> ({insights.target.target_cgpa.toFixed(2)}), aim for an average of</p>
+                    <p className="db-target-grade"><strong>{insights.target.required_grade}</strong><span>{insights.target.required_average.toFixed(2)} grade points per credit</span></p>
+                  </>
+                ) : (
+                  <>
+                    <p className="db-target-lead"><strong>{insights.target.target_class}</strong> is out of reach with the credits left.</p>
+                    <p className="db-body">The highest CGPA still possible is <strong>{insights.target.max_possible_cgpa.toFixed(2)}</strong>. Focus on holding your {s.classification}.</p>
+                  </>
+                )
+              ) : (
+                <p className="db-body">All the semesters for this programme are recorded, so your CGPA is final unless a result changes.</p>
+              )}
+              {s.next_class && (
+                <TargetEditor target={insights.target} estimate={insights.estimate} onChange={setRemainingCredits} />
+              )}
+              <Link to="/planner" className="db-btn db-btn-ghost">Open the planner</Link>
+            </section>
+          </div>
+
+          {/* ---------- Strengths and weaknesses ---------- */}
+          <div className="db-grid">
+            <section className="db-card" aria-labelledby="db-down">
+              <div className="db-card-head">
+                <h2 id="db-down" className="db-h2">Pulling your CGPA down</h2>
+              </div>
+              {insights.pulling_down.length ? (
+                <ul className="db-courses">
+                  {insights.pulling_down.map((c) => (
+                    <li key={c.result_id}>
+                      <span className="db-grade db-grade-low">{c.grade}</span>
+                      <div><strong>{c.course_code}</strong> {c.course_name}<small>{c.credit_hours} credits · {c.academic_year} S{c.semester}</small></div>
+                      <span className="db-impact">{c.impact.toFixed(2)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="db-body">No course is below your CGPA. That is a strong, even record.</p>}
+              <p className="db-note">Impact is how far each course sits below your CGPA, multiplied by its credits.</p>
+            </section>
+
+            <section className="db-card" aria-labelledby="db-up">
+              <div className="db-card-head">
+                <h2 id="db-up" className="db-h2">Your strongest courses</h2>
+              </div>
+              {insights.strongest.length ? (
+                <ul className="db-courses">
+                  {insights.strongest.map((c) => (
+                    <li key={c.result_id}>
+                      <span className="db-grade db-grade-high">{c.grade}</span>
+                      <div><strong>{c.course_code}</strong> {c.course_name}<small>{c.credit_hours} credits · {c.academic_year} S{c.semester}</small></div>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="db-body">No A or B+ grades yet. Your first ones will show here.</p>}
+            </section>
+          </div>
+
+          <div className="db-grid">
+            <section className="db-card" aria-labelledby="db-areas">
+              <div className="db-card-head">
+                <h2 id="db-areas" className="db-h2">By subject area</h2>
+              </div>
+              <ul className="db-areas">
+                {insights.areas.map((a) => (
+                  <li key={a.area}>
+                    <div className="db-area-head">
+                      <strong>{a.area}</strong>
+                      <span>{a.courses} courses · {a.credits} credits</span>
+                      <b>{a.gpa.toFixed(2)}</b>
+                    </div>
+                    <div className="db-area-track" role="img" aria-label={`${a.area} average ${a.gpa.toFixed(2)} out of 4, CGPA ${s.cgpa.toFixed(2)}`}>
+                      <span className="db-area-fill" style={{ width: `${(a.gpa / 4) * 100}%` }} />
+                      <span className="db-area-cgpa" style={{ left: `${(s.cgpa / 4) * 100}%` }} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <p className="db-note"><span className="db-cgpa-mark" aria-hidden="true" /> marks your CGPA. Areas are grouped by course code.</p>
+            </section>
+
+            <section className="db-card" aria-labelledby="db-spread">
+              <div className="db-card-head">
+                <h2 id="db-spread" className="db-h2">Grade spread</h2>
+              </div>
+              <GradeSpreadChart distribution={insights.grade_distribution} />
+            </section>
+          </div>
+        </>
+      )}
+
+      {/* ---------- Academic history ---------- */}
+      {overview.other_programmes?.length > 0 && (
+        <section className="db-card" aria-labelledby="db-history">
+          <div className="db-card-head">
+            <h2 id="db-history" className="db-h2">Academic history</h2>
+          </div>
+          <div className="db-history">
+            {overview.other_programmes.map((p) => {
+              const pc = classStyle(p.classification);
               return (
-                <div
-                  key={ann.id}
-                  style={{
-                    background: ps.bg,
-                    border: `1px solid ${ps.border}`,
-                    borderLeft: `4px solid ${ps.color}`,
-                    borderRadius: "var(--radius-md)",
-                    padding: "14px 18px",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: 16,
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      marginBottom: 4,
-                      flexWrap: "wrap",
-                    }}>
-                      <span style={{
-                        fontFamily: "var(--font-heading)",
-                        fontWeight: 700, fontSize: 14,
-                        color: ps.color,
-                      }}>
-                        {ann.title}
-                      </span>
-                      <span style={{
-                        background: ps.color,
-                        color: "white",
-                        fontFamily: "var(--font-heading)",
-                        fontWeight: 700, fontSize: 9,
-                        padding: "2px 8px",
-                        borderRadius: "var(--radius-full)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                      }}>
-                        {ps.label}
-                      </span>
-                    </div>
-                    <p style={{
-                      fontSize: 13,
-                      color: "var(--text-secondary)",
-                      lineHeight: 1.6,
-                      margin: 0,
-                    }}>
-                      {ann.message}
-                    </p>
+                <article key={p.id} className="db-history-item">
+                  <div>
+                    <h3>{p.programme}</h3>
+                    <p>{p.index_number || "Index number not added"} · {p.status === "completed" ? "Completed" : "Active"}</p>
                   </div>
-                </div>
+                  <div className="db-history-score">
+                    <strong>{p.cgpa.toFixed(2)}</strong>
+                    {p.classification && <span className="db-pill" style={{ color: pc.color, background: pc.bg, borderColor: pc.border }}>{p.classification}</span>}
+                  </div>
+                  <div className="db-history-links">
+                    <button type="button" className="db-link" onClick={() => openProgramme(p.id, "/dashboard")}>View dashboard</button>
+                    <button type="button" className="db-link" onClick={() => openProgramme(p.id, "/transcript")}>Transcript</button>
+                  </div>
+                </article>
               );
             })}
           </div>
-        )}
-
-        <div className="grid-main">
-
-          {/* LEFT COLUMN */}
-          <div style={{
-            display: "flex", flexDirection: "column", gap: 24,
-          }}>
-
-            {/* Risk Analysis */}
-            <div className="card fade-up-4">
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 20,
-              }}>
-                <h3 className="section-title" style={{ marginBottom: 0 }}>
-                  Academic Risk Analysis
-                </h3>
-                <span style={{
-                  background: riskStyle.bg,
-                  border: `1px solid ${riskStyle.border}`,
-                  color: riskStyle.color,
-                  fontFamily: "var(--font-heading)",
-                  fontWeight: 700, fontSize: 12,
-                  padding: "5px 12px",
-                  borderRadius: "var(--radius-full)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}>
-                  <span style={{
-                    width: 7, height: 7,
-                    borderRadius: "50%",
-                    background: riskStyle.dot,
-                  }} />
-                  {risk?.risk_analysis?.risk_level || "Low"} Risk
-                </span>
-              </div>
-
-              {risk?.risk_analysis?.alerts?.length > 0 ? (
-                <div style={{
-                  display: "flex", flexDirection: "column", gap: 10,
-                }}>
-                  {risk.risk_analysis.alerts.map((alert, i) => (
-                    <div key={i} className="alert alert-gold">
-                      {alert}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="alert alert-green">
-                  No active alerts — you are in good academic standing.
-                </div>
-              )}
-
-              <Link to="/risk" style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                marginTop: 18,
-                color: "var(--navy)",
-                fontFamily: "var(--font-heading)",
-                fontWeight: 700, fontSize: 13,
-                padding: "10px 16px",
-                background: "var(--bg-page)",
-                border: "1.5px solid var(--border)",
-                borderRadius: "var(--radius-sm)",
-                transition: "var(--transition)",
-                textDecoration: "none",
-              }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--navy)";
-                  e.currentTarget.style.color = "var(--gold)";
-                  e.currentTarget.style.borderColor = "var(--navy)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "var(--bg-page)";
-                  e.currentTarget.style.color = "var(--navy)";
-                  e.currentTarget.style.borderColor = "var(--border)";
-                }}
-              >
-                View full risk report →
-              </Link>
-            </div>
-
-            {/* Platform Features */}
-            <div>
-              <h3 className="section-title">Platform Features</h3>
-              <div className="grid-2" style={{ gap: 12 }}>
-                {features.map((item, i) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`fade-up-${Math.min(i + 1, 5)}`}
-                    style={{
-                      background: "var(--bg-card)",
-                      borderRadius: "var(--radius-md)",
-                      padding: "18px",
-                      border: `1.5px solid ${item.border}`,
-                      textDecoration: "none",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 14,
-                      transition: "var(--transition)",
-                      boxShadow: "var(--shadow-sm)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-3px)";
-                      e.currentTarget.style.boxShadow = "var(--shadow-lg)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "var(--shadow-sm)";
-                    }}
-                  >
-                    <div style={{
-                      width: 42, height: 42,
-                      borderRadius: "var(--radius-sm)",
-                      background: item.color,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "var(--navy)",
-                      flexShrink: 0,
-                    }}>
-                      {featureIcons[item.path]}
-                    </div>
-                    <div>
-                      <p style={{
-                        fontFamily: "var(--font-heading)",
-                        fontWeight: 700, fontSize: 14,
-                        color: "var(--navy)", marginBottom: 3,
-                      }}>
-                        {item.label}
-                      </p>
-                      <p style={{
-                        fontSize: 12,
-                        color: "var(--text-muted)",
-                        lineHeight: 1.5,
-                      }}>
-                        {item.sub}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-          {/* RIGHT COLUMN — GPA History */}
-          <div className="card fade-up-4" style={{
-            position: "sticky",
-            top: "calc(var(--navbar-height) + 16px)",
-          }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 20,
-            }}>
-              <h3 className="section-title" style={{ marginBottom: 0 }}>
-                GPA History
-              </h3>
-              <Link to="/gpa" style={{
-                color: "var(--text-muted)",
-                fontFamily: "var(--font-heading)",
-                fontWeight: 600, fontSize: 12,
-                textDecoration: "none",
-              }}>
-                See all →
-              </Link>
-            </div>
-
-            {trends?.trend_analysis?.history?.length > 0 ? (
-              <div style={{
-                display: "flex", flexDirection: "column", gap: 12,
-              }}>
-                {trends.trend_analysis.history.map((item, i) => {
-                  const pct = (item.gpa / 4.0) * 100;
-                  const barColor = styleForClass(classifyWithBands(item.gpa, bands)).bar;
-                  return (
-                    <div key={i} style={{
-                      padding: "12px 14px",
-                      background: "var(--bg-page)",
-                      borderRadius: "var(--radius-md)",
-                    }}>
-                      <div style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                      }}>
-                        <p style={{
-                          fontFamily: "var(--font-heading)",
-                          fontWeight: 700, fontSize: 13,
-                          color: "var(--navy)",
-                        }}>
-                          {shortSemester(item.academic_year, item.semester)}
-                        </p>
-                        <span style={{
-                          fontFamily: "var(--font-heading)",
-                          fontWeight: 900, fontSize: 18,
-                          color: barColor,
-                        }}>
-                          {item.gpa.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="progress-track">
-                        <div
-                          className="progress-fill"
-                          style={{ width: `${pct}%`, background: barColor }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-
-                <div style={{
-                  background: "var(--navy)",
-                  borderRadius: "var(--radius-md)",
-                  padding: "16px", marginTop: 4,
-                }}>
-                  <div style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: 8,
-                  }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700,
-                      color: "rgba(255,255,255,0.4)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      fontFamily: "var(--font-heading)",
-                    }}>
-                      CGPA Progress
-                    </span>
-                    <span style={{
-                      fontSize: 13, fontWeight: 800,
-                      color: "var(--gold)",
-                      fontFamily: "var(--font-heading)",
-                    }}>
-                      {cgpa.toFixed(2)} / 4.00
-                    </span>
-                  </div>
-                  <div style={{
-                    height: 8,
-                    background: "rgba(255,255,255,0.1)",
-                    borderRadius: "var(--radius-full)",
-                    overflow: "hidden",
-                  }}>
-                    <div style={{
-                      height: "100%",
-                      width: `${(cgpa / 4.0) * 100}%`,
-                      background: "linear-gradient(90deg, var(--gold), var(--gold-deep))",
-                      borderRadius: "var(--radius-full)",
-                      transition: "width 1s ease",
-                    }} />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div style={{ textAlign: "center", padding: "40px 20px" }}>
-                <p style={{
-                  fontFamily: "var(--font-heading)",
-                  fontWeight: 600, fontSize: 14,
-                  color: "var(--navy)", marginBottom: 6,
-                }}>
-                  No results yet
-                </p>
-                <p style={{
-                  fontSize: 13, color: "var(--text-muted)",
-                  marginBottom: 20,
-                }}>
-                  Add your semester results to start tracking
-                </p>
-                <Link to="/results" className="btn btn-primary btn-sm">
-                  Add Results →
-                </Link>
-              </div>
-            )}
-          </div>
-
-        </div>
-      </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .dash-hero { grid-template-columns: 1fr !important; }
-          .dash-cgpa-badge { display: none !important; }
-        }
-        @media (max-width: 480px) {
-          .dash-hero h1 { font-size: 20px !important; }
-        }
-      `}</style>
-
+        </section>
+      )}
     </div>
   );
 }

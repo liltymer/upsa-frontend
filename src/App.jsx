@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, Link } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { ProgrammeProvider } from "./context/ProgrammeContext";
 
@@ -24,7 +24,7 @@ const AdminAnnouncements = lazy(() => import("./pages/AdminAnnouncements"));
 const AdminCourses = lazy(() => import("./pages/AdminCourses"));
 
 // Components
-import Navbar from "./components/Navbar";
+import AppLayout from "./components/app/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function NotFound() {
@@ -80,18 +80,11 @@ function AdminRoute({ children }) {
 
 export default function App() {
   const { isAuthenticated, user, token } = useAuth();
-  const location = useLocation();
-
-  // Hide student navbar on admin pages
-  const isAdminPage = location.pathname.startsWith("/admin");
 
   return (
     // Keyed by token so a different login never sees the previous student's programmes
     <ProgrammeProvider key={token || "signed-out"}>
     <div style={{ minHeight: "100vh", background: "var(--bg-page)" }}>
-
-      {/* Navbar — only show when logged in and NOT on admin pages */}
-      {isAuthenticated && !isAdminPage && <Navbar />}
 
       <Suspense fallback={<PageLoader />}>
       <Routes>
@@ -124,14 +117,19 @@ export default function App() {
           }
         />
 
-        {/* Protected Student Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
-        <Route path="/gpa" element={<ProtectedRoute><GPA /></ProtectedRoute>} />
-        <Route path="/transcript" element={<ProtectedRoute><Transcript /></ProtectedRoute>} />
-        <Route path="/simulator" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
-        <Route path="/risk" element={<ProtectedRoute><Risk /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        {/* Signed-in student pages share the sidebar layout */}
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/results" element={<Results />} />
+          <Route path="/gpa" element={<GPA />} />
+          <Route path="/transcript" element={<Transcript />} />
+          <Route path="/planner" element={<Simulator />} />
+          <Route path="/standing" element={<Risk />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
+        {/* Old addresses keep working */}
+        <Route path="/simulator" element={<Navigate to="/planner" replace />} />
+        <Route path="/risk" element={<Navigate to="/standing" replace />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
