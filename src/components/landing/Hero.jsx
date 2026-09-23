@@ -31,7 +31,7 @@ export default function Hero() {
               <img
                 src={campus1400}
                 srcSet={`${campus800} 800w, ${campus1400} 1330w`}
-                sizes="(max-width: 860px) 92vw, 660px"
+                sizes="(max-width: 860px) 92vw, 720px"
                 width="1330"
                 height="900"
                 alt="Campus buildings at the University of Professional Studies, Accra"
