@@ -408,6 +408,7 @@
 .db-stage-sub { margin: 4px 0 0; font-size: 13px; color: var(--db-muted); }
 .db-stage-progress { max-width: 320px; margin: 10px 0 12px; }
 .db-stage-msg { margin: 0 0 6px; font-size: 15px; line-height: 1.6; color: var(--db-body); }
+.db-stage-lead { font-family: var(--font-heading); font-weight: 700; font-size: 16px; color: var(--navy); }
 .db-stage-range { padding: 16px 18px; border-radius: 14px; background: var(--db-soft); border: 1px solid var(--db-line); }
 .db-range-row { display: flex; align-items: center; gap: 10px; }
 .db-range-cell { flex: 1; display: grid; gap: 2px; padding: 12px; border-radius: 10px; background: #fff; border: 1px solid var(--db-line); text-align: center; }
@@ -489,6 +490,33 @@
 .db-ring-text strong { font-family: var(--font-heading); font-weight: 800; font-size: 32px; line-height: 1; color: var(--gold); }
 .db-ring-text span { font-size: 12px; color: rgba(255, 255, 255, 0.65); margin-top: 4px; }
 
+/* Hero details as chips, gold accent along the bottom */
+.db-hero-chips { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.db-hero-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+.db-hero-chips li svg { color: var(--gold); flex-shrink: 0; }
+.db-hero-chips li.db-chip-done { background: rgba(23, 178, 106, 0.2); border-color: rgba(23, 178, 106, 0.5); color: #d1fadf; }
+.db-hero-chips li.db-chip-done svg { color: #6ce9a6; }
+.db-hero::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-deep) 60%, transparent);
+}
+
 /* ---------- Timeline ---------- */
 
 .db-stage { display: grid; gap: 18px; grid-template-columns: 1fr; }
@@ -551,6 +579,23 @@
 .db-card { box-shadow: 0 1px 2px rgba(8, 28, 70, 0.04), 0 8px 24px rgba(8, 28, 70, 0.04); }
 .db-courses li { transition: background-color 0.15s ease; border-radius: 8px; }
 .db-courses li:hover { background: var(--db-soft); }
+
+/* Short or zoomed desktop screens: compact hero so the next card is visible */
+@media (min-width: 901px) and (max-height: 820px) {
+  .db { gap: 16px; padding-top: 18px; }
+  .db-hero { padding: 20px 24px; gap: 16px; border-radius: 18px; }
+  .db-hero-title { font-size: 24px; margin-bottom: 2px; }
+  .db-hero-greet { font-size: 14px; margin-bottom: 2px; }
+  .db-hero-chips { margin-top: 8px; }
+  .db-hero-chips li { padding: 3px 10px; font-size: 12px; }
+  .db-hero-score { padding: 12px 18px; }
+  .db-ring, .db-ring svg { width: 96px; height: 96px; }
+  .db-ring-text strong { font-size: 24px; }
+  .db-headline-main { font-size: 18px; }
+  .db-headline-sub { font-size: 14px; }
+  .db-hero-text .db-meter { margin-top: 10px; }
+  .db-stage { gap: 12px; }
+}
 
 /* ---------- Entrance motion ---------- */
 

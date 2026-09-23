@@ -54,7 +54,11 @@ function CgpaRing({ value }) {
 }
 
 /** One plain sentence that answers "how am I doing?" */
-function headline(s) {
+function headline(s, overview) {
+  if (overview?.completed) {
+    const award = overview.award_type === "diploma" ? "diploma" : "degree";
+    return { main: `You finished your ${award} with ${s.classification}.`, sub: `Final CGPA ${s.cgpa.toFixed(2)} across ${s.credits_completed} credits.` };
+  }
   if (!s.next_class) return { main: `You're in ${s.classification}, the highest class.`, sub: "Keep your semester GPAs at this level to hold it." };
   const main = `You're in ${s.classification}, ${s.gap_to_next_class.toFixed(2)} away from ${s.next_class}.`;
   let sub = "";
@@ -130,7 +134,7 @@ function StageCard({ stage, history = [], topUpLink }) {
 
       <div className={`db-stage-body${range ? "" : " db-stage-body-single"}`}>
         <div className="db-stage-text">
-          {stage.messages.map((m) => <p key={m} className="db-stage-msg">{m}</p>)}
+          {stage.messages.map((m, i) => <p key={m} className={`db-stage-msg${i === 0 ? " db-stage-lead" : ""}`}>{m}</p>)}
           {topUpLink && <Link to="/profile" className="db-btn db-btn-sm db-stage-cta">Add my top-up <Icon name="arrowRight" size={16} /></Link>}
         </div>
         {range && (
@@ -341,7 +345,7 @@ export default function Dashboard() {
     ...(overview.needs_review ? [{ label: "Confirm your programme details", done: false, link: "/profile", cta: "Review" }] : []),
   ];
   const showChecklist = !checklistHidden && checklist.some((i) => !i.done);
-  const head = insights.has_results ? headline(s) : null;
+  const head = insights.has_results ? headline(s, overview) : null;
 
   return (
     <div className="db">
@@ -352,10 +356,14 @@ export default function Dashboard() {
           <div>
             <p className="db-hero-greet">{greeting()}, {displayName}</p>
             <h1 className="db-hero-title">Your academic overview</h1>
-            <p className="db-hero-meta">
-              {overview.programme} · Level {overview.level} · {overview.index_number || "No index number"}
-              {overview.status === "completed" ? " · Completed programme" : ""}
-            </p>
+            <ul className="db-hero-chips" aria-label="Programme details">
+              <li><Icon name="layers" size={14} />{overview.programme}</li>
+              <li className={overview.completed ? "db-chip-done" : ""}>
+                {overview.completed && <Icon name="check" size={14} strokeWidth={2.6} />}
+                {overview.level_label || `Level ${overview.level}`}
+              </li>
+              <li><Icon name="user" size={14} />{overview.index_number || "No index number"}</li>
+            </ul>
           </div>
           <Link to="/results" className="db-btn"><Icon name="results" size={18} /> Add results</Link>
         </div>

@@ -76,7 +76,7 @@ function ProgrammeCard({ enrollment, programmes, academicYears, canDelete, onSav
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
             {enrollment.index_number || "Index number not added"} ·{" "}
             {enrollment.award_type === "diploma" ? "Diploma" : enrollment.is_top_up ? "Degree (Top-up)" : "Degree"} ·{" "}
-            {enrollment.is_current ? `Current · Level ${enrollment.current_level}` : "Completed"} · from {enrollment.start_academic_year}
+            {enrollment.completed || !enrollment.is_current ? "Completed" : `Current · ${enrollment.level_label || `Level ${enrollment.current_level}`}`} · from {enrollment.start_academic_year}
           </p>
         </div>
         <div style={{ textAlign: "right" }}>
