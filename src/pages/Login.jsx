@@ -164,8 +164,10 @@ export default function Login() {
         )}
       </form>
 
-      <div className="au-divider">New to GradeIQ UPSA?</div>
-      <Link to="/register" className="au-secondary">Create an account</Link>
+      <div className="au-mobile-only">
+        <div className="au-divider">New to GradeIQ UPSA?</div>
+        <Link to="/register" className="au-secondary">Create an account</Link>
+      </div>
 
       <p className="au-note">
         Having trouble signing in? Email <a className="au-link" href="mailto:ahenkorajoshuaowusu@outlook.com">ahenkorajoshuaowusu@outlook.com</a>
