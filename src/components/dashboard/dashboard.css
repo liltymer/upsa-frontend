@@ -182,10 +182,14 @@
 .db-chart { margin: 0; }
 .db-chart-area { height: 260px; }
 .db-chart-sm .db-chart-area { height: 220px; }
-.db-legend { list-style: none; margin: 0 0 8px; padding: 0; display: flex; gap: 18px; font-size: 13px; color: var(--db-body); }
+.db-legend { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--db-body); }
 .db-legend li { display: inline-flex; align-items: center; gap: 8px; }
 .db-key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
 .db-key-line { width: 16px; height: 3px; border-radius: 2px; }
+.db-key-zone { width: 14px; height: 10px; border-radius: 3px; background: #fff6d6; border: 1px solid #f5d77a; }
+.db-chart-area { height: 280px; }
+.db-legend li { white-space: nowrap; }
+.db-legend strong { margin-left: 6px; color: var(--db-ink, #0b1b3f); font-weight: 800; }
 .db-chart-caption { margin-top: 8px; font-size: 13px; color: var(--db-muted); }
 .db-chart-caption strong { color: var(--db-ink); }
 .db-tooltip {
