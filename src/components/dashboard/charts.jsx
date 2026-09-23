@@ -5,7 +5,6 @@ import {
   CartesianGrid,
   ComposedChart,
   Line,
-  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -34,9 +33,6 @@ const SHORT_BAND = {
   Pass: "Pass",
   Fail: "Fail",
 };
-// Very light zone tints, strongest for the top class
-const BAND_FILLS = ["#fff6d6", "#eef3fd", "#f6f8fc", "#ffffff", "#f6f8fc", "#ffffff"];
-
 const bandFor = (value, bands) => bands.find((b) => value >= b.min) || bands[bands.length - 1];
 
 function TrendTooltip({ active, payload, bands }) {
@@ -52,70 +48,74 @@ function TrendTooltip({ active, payload, bands }) {
   );
 }
 
-/** Band name in the right gutter, centred on its zone, so it never sits under a line. */
-const zoneLabel = (text) => function ZoneLabel({ viewBox }) {
-  if (!viewBox || viewBox.height < 14) return null;
+/** Y axis label: the class that starts at this value, then the value itself. */
+const classTick = (bands) => function ClassTick({ x, y, payload }) {
+  const band = bands.find((b) => Math.abs(b.min - payload.value) < 0.001 && b.label !== "Fail");
   return (
-    <text x={viewBox.x + viewBox.width + 10} y={viewBox.y + viewBox.height / 2} fill={AXIS}
-      fontSize={11} fontWeight={700} dominantBaseline="middle">
-      {text}
+    <text x={x} y={y} textAnchor="end" dominantBaseline="middle" fontSize={12}>
+      {band && <tspan fill={AXIS} fontWeight={600} fontSize={11}>{SHORT_BAND[band.label] || band.label}</tspan>}
+      <tspan dx={band ? 6 : 0} fill={INK} fontWeight={700}>{payload.value.toFixed(2)}</tspan>
     </text>
   );
 };
 
-/** Semester GPA and running CGPA on one axis, over the class zones. */
+/** Latest point: a soft halo behind a solid marker. */
+const lastDot = (count, color) => function LastDot({ cx, cy, index }) {
+  if (cx == null || cy == null) return null;
+  const isLast = index === count - 1;
+  return (
+    <g key={index}>
+      {isLast && <circle cx={cx} cy={cy} r={11} fill={color} opacity={0.16} />}
+      <circle cx={cx} cy={cy} r={isLast ? 5.5 : 4.5} fill={isLast ? color : "#fff"} stroke={color} strokeWidth={2.5} />
+    </g>
+  );
+};
+
+/** Running CGPA as the headline line, semester GPA beside it, class boundaries on the axis. */
 export function TrendChart({ history, bands }) {
   const data = history.map((h) => ({ ...h, label: short(h.title) }));
   const lowest = Math.min(...data.flatMap((d) => [d.gpa, d.cgpa]));
-  const floor = Math.max(0, Math.floor((lowest - 0.5) * 2) / 2);
-  const ticks = [];
-  for (let t = floor; t <= 4.0001; t += floor >= 2 ? 0.5 : 1) ticks.push(Number(t.toFixed(1)));
-
-  // Zones between consecutive band minimums that fall inside the visible range
-  const zones = bands
-    .map((b, i) => ({ ...b, top: i === 0 ? 4 : bands[i - 1].min }))
-    .filter((z) => z.top > floor)
-    .map((z, i) => ({ ...z, from: Math.max(z.min, floor), fill: BAND_FILLS[i] || "#ffffff" }));
+  const floor = Math.max(0, Math.floor((lowest - 0.3) * 2) / 2);
+  // Gridlines only where a class starts, plus the ends of the scale
+  const bounds = bands.map((b) => b.min).filter((m) => m > floor && m < 4);
+  const ticks = [...new Set([floor, ...bounds, 4].map((t) => Number(t.toFixed(2))))].sort((a, b) => a - b);
   const last = data[data.length - 1];
 
   return (
-    <figure className="db-chart" aria-label="Semester GPA and CGPA over time, with class zones">
+    <figure className="db-chart" aria-label="Semester GPA and CGPA over time">
       <ul className="db-legend">
-        <li><span className="db-key" style={{ background: SERIES.gpa }} />Semester GPA{last && <strong>{last.gpa.toFixed(2)}</strong>}</li>
         <li><span className="db-key db-key-line" style={{ background: SERIES.cgpa }} />CGPA{last && <strong>{last.cgpa.toFixed(2)}</strong>}</li>
-        <li><span className="db-key db-key-zone" />Class zones</li>
+        <li><span className="db-key db-key-ring" style={{ borderColor: SERIES.gpa }} />Semester GPA{last && <strong>{last.gpa.toFixed(2)}</strong>}</li>
       </ul>
       <div className="db-chart-area">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 10, right: 78, bottom: 4, left: -18 }}>
+          <ComposedChart data={data} margin={{ top: 14, right: 18, bottom: 0, left: 0 }}>
             <defs>
-              <linearGradient id="db-gpa-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={SERIES.gpa} stopOpacity={0.22} />
-                <stop offset="100%" stopColor={SERIES.gpa} stopOpacity={0} />
+              <linearGradient id="db-cgpa-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ffc005" stopOpacity={0.28} />
+                <stop offset="100%" stopColor="#ffc005" stopOpacity={0} />
               </linearGradient>
             </defs>
-            {zones.map((z) => (
-              <ReferenceArea key={z.label} y1={z.from} y2={z.top} fill={z.fill} fillOpacity={1} stroke="none"
-                label={zoneLabel(SHORT_BAND[z.label] || z.label)} ifOverflow="hidden" />
-            ))}
-            <CartesianGrid stroke={GRID} strokeDasharray="0" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill: AXIS, fontSize: 12 }} tickLine={false} axisLine={{ stroke: GRID }} padding={{ left: 16, right: 8 }} />
-            <YAxis domain={[floor, 4]} ticks={ticks} tick={{ fill: AXIS, fontSize: 12 }} tickLine={false} axisLine={false} />
-            <Tooltip content={<TrendTooltip bands={bands} />} cursor={{ stroke: "#aeb7c9", strokeWidth: 1, strokeDasharray: "3 3" }} />
-            <Area type="monotone" dataKey="gpa" stroke="none" fill="url(#db-gpa-fill)" isAnimationActive={false} activeDot={false} />
-            <Line type="monotone" dataKey="gpa" name="Semester GPA" stroke={SERIES.gpa} strokeWidth={2.5}
-              dot={{ r: 5, strokeWidth: 2.5, stroke: "#fff", fill: SERIES.gpa }} activeDot={{ r: 7, strokeWidth: 3, stroke: "#fff" }}
+            <CartesianGrid stroke={GRID} strokeDasharray="4 6" vertical={false} />
+            <XAxis dataKey="label" tick={{ fill: AXIS, fontSize: 12 }} tickLine={false} axisLine={false}
+              padding={{ left: 20, right: 20 }} dy={8} />
+            <YAxis domain={[floor, 4]} ticks={ticks} interval={0} tick={classTick(bands)} width={112}
+              tickLine={false} axisLine={false} />
+            <Tooltip content={<TrendTooltip bands={bands} />} cursor={{ stroke: "#c3cbdb", strokeWidth: 1, strokeDasharray: "3 3" }} />
+            <Area type="monotone" dataKey="cgpa" stroke="none" fill="url(#db-cgpa-fill)" baseValue={floor}
+              isAnimationActive={false} activeDot={false} />
+            <Line type="monotone" dataKey="gpa" stroke={SERIES.gpa} strokeWidth={2}
+              dot={lastDot(data.length, SERIES.gpa)} activeDot={{ r: 6, strokeWidth: 3, stroke: "#fff", fill: SERIES.gpa }}
               isAnimationActive={false} />
-            <Line type="monotone" dataKey="cgpa" name="CGPA" stroke={SERIES.cgpa} strokeWidth={2.5} strokeDasharray="7 5"
-              dot={{ r: 5, strokeWidth: 2.5, stroke: "#fff", strokeDasharray: "0", fill: SERIES.cgpa }}
-              activeDot={{ r: 7, strokeWidth: 3, stroke: "#fff", strokeDasharray: "0" }}
+            <Line type="monotone" dataKey="cgpa" stroke={SERIES.cgpa} strokeWidth={3}
+              dot={lastDot(data.length, SERIES.cgpa)} activeDot={{ r: 6.5, strokeWidth: 3, stroke: "#fff", fill: SERIES.cgpa }}
               isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
       {last && (
         <figcaption className="db-chart-caption">
-          Your CGPA is in the <strong>{bandFor(last.cgpa, bands)?.label}</strong> zone. Tap or hover on a semester to see its figures.
+          Your CGPA is in <strong>{bandFor(last.cgpa, bands)?.label}</strong>. Tap or hover on a semester to see its figures.
         </figcaption>
       )}
     </figure>
