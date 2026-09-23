@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import API from "../services/api";
+import API, { getErrorMessage } from "../services/api";
 
 const PROGRAMMES = [
 "Diploma in Accounting",
@@ -160,7 +160,7 @@ export default function AdminCourses() {
       );
     } catch (err) {
       showToast(
-        err.response?.data?.detail || "Failed to add course.", "error"
+        getErrorMessage(err, "Failed to add course."), "error"
       );
     } finally {
       setSubmitting(false);

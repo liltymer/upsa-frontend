@@ -4,6 +4,10 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
 import { getCGPA, getGPAHistory, getTrends } from "../services/api";
+import { useProgrammes } from "../context/ProgrammeContext";
+import useReferenceData from "../hooks/useReferenceData";
+import ProgrammeSwitcher from "../components/ProgrammeSwitcher";
+import { classStyle as styleForClass, classifyWithBands, semesterTitle, shortSemester } from "../utils/academic";
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -58,19 +62,27 @@ export default function GPA() {
   const [history, setHistory] = useState([]);
   const [trends, setTrends] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [awardType, setAwardType] = useState("degree");
+  const { selectedEnrollmentId } = useProgrammes();
+  const { classification_bands: allBands } = useReferenceData();
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [cgpaData, historyData, trendData] = await Promise.all([getCGPA(), getGPAHistory(), getTrends()]);
+        const [cgpaData, historyData, trendData] = await Promise.all([
+          getCGPA(selectedEnrollmentId),
+          getGPAHistory(selectedEnrollmentId),
+          getTrends(selectedEnrollmentId),
+        ]);
         setCgpa(cgpaData.cgpa);
+        setAwardType(cgpaData.award_type);
         setHistory(historyData.gpa_history || []);
         setTrends(trendData.trend_analysis);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     };
     fetchAll();
-  }, []);
+  }, [selectedEnrollmentId]);
 
   if (loading) return (
     <div className="loading-screen">
@@ -79,14 +91,9 @@ export default function GPA() {
     </div>
   );
 
-  const getClassStyle = (gpa) => {
-    if (gpa >= 3.6) return { label: "First Class", color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)" };
-    if (gpa >= 3.0) return { label: "Second Class Upper", color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)" };
-    if (gpa >= 2.5) return { label: "Second Class Lower", color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)" };
-    if (gpa >= 2.0) return { label: "Third Class", color: "var(--orange)", bg: "var(--orange-bg)", border: "var(--orange-border)" };
-    if (gpa >= 1.0) return { label: "Pass", color: "var(--text-muted)", bg: "#F9FAFB", border: "var(--border)" };
-    return { label: "Fail", color: "var(--red)", bg: "var(--red-bg)", border: "var(--red-border)" };
-  };
+  // Diploma and degree programmes use different class bands
+  const bands = allBands[awardType] || [];
+  const getClassStyle = (gpa) => styleForClass(classifyWithBands(gpa, bands));
 
   const getTrendStyle = (trend) => {
     if (trend === "Improving") return { color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)" };
@@ -94,19 +101,17 @@ export default function GPA() {
     return { color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)" };
   };
 
-  const getBarColor = (gpa) => {
-    if (gpa >= 3.6) return "#22C55E";
-    if (gpa >= 3.0) return "#3B82F6";
-    if (gpa >= 2.5) return "#F59E0B";
-    if (gpa >= 2.0) return "#F97316";
-    return "#EF4444";
-  };
+  const getBarColor = (gpa) => getClassStyle(gpa).bar;
 
   const classStyle = getClassStyle(cgpa ?? 0);
   const trendStyle = getTrendStyle(trends?.trend);
   const gpas = history.map((h) => h.gpa);
   const minGpa = gpas.length > 0 ? Math.max(0, Math.floor(Math.min(...gpas) - 0.5)) : 0;
-  const chartData = history.map((h) => ({ name: "Y" + h.year + "S" + h.semester, label: "Year " + h.year + " — Sem " + h.semester, gpa: h.gpa }));
+  const chartData = history.map((h) => ({
+    name: shortSemester(h.academic_year, h.semester),
+    label: semesterTitle(h.academic_year, h.semester),
+    gpa: h.gpa,
+  }));
 
   const gradeScale = [
     { grade: "A", range: "80-100%", points: "4.0", color: "var(--green)", bg: "var(--green-bg)" },
@@ -120,13 +125,9 @@ export default function GPA() {
     { grade: "F", range: "0-44%", points: "0.0", color: "var(--red)", bg: "var(--red-bg)" },
   ];
 
-  const classBands = [
-    { label: "First Class", range: "3.6 - 4.0", color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)" },
-    { label: "2nd Class Upper", range: "3.0 - 3.59", color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)" },
-    { label: "2nd Class Lower", range: "2.5 - 2.99", color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)" },
-    { label: "Third Class", range: "2.0 - 2.49", color: "var(--orange)", bg: "var(--orange-bg)", border: "var(--orange-border)" },
-    { label: "Pass", range: "1.0 - 1.99", color: "var(--text-muted)", bg: "#F9FAFB", border: "var(--border)" },
-  ];
+  const classBands = bands
+    .filter((b) => b.label !== "Fail")
+    .map((b) => ({ ...styleForClass(b.label), range: b.range }));
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-page)", fontFamily: "var(--font-body)" }}>
@@ -137,6 +138,7 @@ export default function GPA() {
             <div className="fade-up">
               <p className="page-eyebrow">Academic Performance</p>
               <h1 className="page-title">GPA Tracker</h1>
+              <ProgrammeSwitcher />
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>{history.length} semester{history.length !== 1 ? "s" : ""} of data</p>
             </div>
             <div className="fade-up-1 gpa-badge" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,192,5,0.2)", borderRadius: "var(--radius-xl)", padding: "24px 36px", textAlign: "center", backdropFilter: "blur(10px)" }}>
@@ -275,7 +277,7 @@ export default function GPA() {
               </div>
             ))}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }} className="bands-grid">
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${classBands.length || 1}, 1fr)`, gap: 10 }} className="bands-grid">
             {classBands.map((band) => (
               <div key={band.label} style={{ background: band.bg, border: "1.5px solid " + band.border, borderRadius: "var(--radius-sm)", padding: "12px 10px", textAlign: "center" }}>
                 <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 11, color: band.color, marginBottom: 4 }}>{band.label}</p>

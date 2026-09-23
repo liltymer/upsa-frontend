@@ -1,25 +1,27 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { ProgrammeProvider } from "./context/ProgrammeContext";
 
-// Pages
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Results from "./pages/Results";
-import GPA from "./pages/GPA";
-import Transcript from "./pages/Transcript";
-import Simulator from "./pages/Simulator";
-import Risk from "./pages/Risk";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Profile from "./pages/Profile";
+// Pages — loaded on demand so each route ships its own chunk
+const Landing = lazy(() => import("./pages/Landing"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Results = lazy(() => import("./pages/Results"));
+const GPA = lazy(() => import("./pages/GPA"));
+const Transcript = lazy(() => import("./pages/Transcript"));
+const Simulator = lazy(() => import("./pages/Simulator"));
+const Risk = lazy(() => import("./pages/Risk"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 // Admin Pages
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminUsers from "./pages/AdminUsers";
-import AdminAnnouncements from "./pages/AdminAnnouncements";
-import AdminCourses from "./pages/AdminCourses";
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminUsers = lazy(() => import("./pages/AdminUsers"));
+const AdminAnnouncements = lazy(() => import("./pages/AdminAnnouncements"));
+const AdminCourses = lazy(() => import("./pages/AdminCourses"));
 
 // Components
 import Navbar from "./components/Navbar";
@@ -61,6 +63,14 @@ function NotFound() {
   );
 }
 
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-light-bg flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-navy border-t-gold rounded-full animate-spin" />
+    </div>
+  );
+}
+
 function AdminRoute({ children }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -69,23 +79,21 @@ function AdminRoute({ children }) {
 }
 
 export default function App() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, token } = useAuth();
   const location = useLocation();
 
   // Hide student navbar on admin pages
   const isAdminPage = location.pathname.startsWith("/admin");
 
-  // Where to redirect after login based on role
-  const homeRoute = isAuthenticated
-    ? user?.role === "admin" ? "/admin" : "/dashboard"
-    : "/";
-
   return (
+    // Keyed by token so a different login never sees the previous student's programmes
+    <ProgrammeProvider key={token || "signed-out"}>
     <div style={{ minHeight: "100vh", background: "var(--bg-page)" }}>
 
       {/* Navbar — only show when logged in and NOT on admin pages */}
       {isAuthenticated && !isAdminPage && <Navbar />}
 
+      <Suspense fallback={<PageLoader />}>
       <Routes>
 
         {/* Landing — root URL */}
@@ -131,14 +139,16 @@ export default function App() {
         <Route path="/admin/announcements" element={<AdminRoute><AdminAnnouncements /></AdminRoute>} />
         <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
 
-          {/* Password Reset Routes */}
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Password Reset Routes */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
 
       </Routes>
+      </Suspense>
     </div>
+    </ProgrammeProvider>
   );
 }
