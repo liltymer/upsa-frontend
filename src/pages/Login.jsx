@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { authErrorMessage, homeFor, startSession } from "../services/session";
 import AuthLayout from "../components/auth/AuthLayout";
 import Icon from "../components/landing/Icon";
+import { PasswordField } from "../components/auth/fields";
 
 // The API runs on a free instance that sleeps when idle; the first request can take up to a minute.
 const SLOW_AFTER_MS = 5000;
@@ -17,7 +18,6 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [slow, setSlow] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const slowTimer = useRef(null);
 
   useEffect(() => () => clearTimeout(slowTimer.current), []);
@@ -107,36 +107,16 @@ export default function Login() {
           )}
         </div>
 
-        <div className="au-field">
-          <div className="au-label-row">
-            <label className="au-label" htmlFor="password">Password</label>
-            <Link to="/forgot-password" className="au-link">Forgot password?</Link>
-          </div>
-          <div className="au-input-wrap">
-            <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              className="au-input"
-              autoComplete="current-password"
-              placeholder="Enter your password"
-              value={form.password}
-              onChange={handleChange}
-              aria-invalid={Boolean(fieldErrors.password)}
-              aria-describedby={fieldErrors.password ? "password-error" : undefined}
-            />
-            <button
-              type="button"
-              className="au-reveal"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              aria-pressed={showPassword}
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </div>
-          {fieldErrors.password && <p className="au-field-error" id="password-error">{fieldErrors.password}</p>}
-        </div>
+        <PasswordField
+          id="password"
+          label="Password"
+          autoComplete="current-password"
+          placeholder="Enter your password"
+          value={form.password}
+          onChange={handleChange}
+          error={fieldErrors.password}
+          labelAside={<Link to="/forgot-password" className="au-link">Forgot password?</Link>}
+        />
 
         <button type="submit" className="au-submit" disabled={loading}>
           {loading && <span className="au-spinner" aria-hidden="true" />}

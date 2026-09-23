@@ -5,7 +5,9 @@ import { registerStudent } from "../services/api";
 import { authErrorMessage, homeFor, startSession } from "../services/session";
 import useReferenceData from "../hooks/useReferenceData";
 import AuthLayout from "../components/auth/AuthLayout";
-import { Alert, ComboField, PasswordField, SelectField, TextField } from "../components/auth/fields";
+import Icon from "../components/landing/Icon";
+import { Alert, ComboField, PasswordField, PasswordStrength, SelectField, TextField } from "../components/auth/fields";
+import { isStrongPassword, passwordChecks, passwordScore } from "../utils/password";
 
 const LEVELS = [100, 200, 300, 400];
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,9 +22,9 @@ const isDiplomaName = (name) => name.toLowerCase().includes("diploma");
 const SLOW_AFTER_MS = 5000;
 
 const STEPS = [
-  { title: "About you", subtitle: "Your name and the details you will sign in with." },
-  { title: "Your programme", subtitle: "The UPSA programme you are on now. Pick from the lists or type your own." },
-  { title: "Your diploma", subtitle: "Optional. Record the diploma you completed before your top-up." },
+  { title: "About you", short: "About you", subtitle: "Your name and the details you will sign in with." },
+  { title: "Your programme", short: "Programme", subtitle: "The UPSA programme you are on now. Pick from the lists or type your own." },
+  { title: "Your diploma", short: "Diploma", subtitle: "Optional. Record the diploma you completed before your top-up." },
 ];
 
 const EMPTY = {
@@ -42,6 +44,8 @@ export default function Register() {
   } = useReferenceData();
 
   const [step, setStep] = useState(0);
+  // Furthest step reached, so students can move back and forward freely
+  const [furthest, setFurthest] = useState(0);
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
@@ -96,7 +100,9 @@ export default function Register() {
     if (index === 0) {
       if (form.name.trim().length < 2) e.name = "Enter your full name.";
       if (!EMAIL_PATTERN.test(form.email.trim())) e.email = "Enter a valid email address.";
-      if (form.password.length < 8) e.password = "Use at least 8 characters.";
+      if (!isStrongPassword(form.password, { email: form.email, name: form.name })) {
+        e.password = "Choose a stronger password that meets every rule below.";
+      }
       if (form.confirm !== form.password) e.confirm = "The passwords do not match.";
     }
     if (index === 1) {
@@ -163,14 +169,32 @@ export default function Register() {
     }
   };
 
+  // Move to any step. Going back is always allowed; going forward checks
+  // every step in between and stops at the first one that needs fixing.
+  const goToStep = (target) => {
+    setServerError("");
+    if (target <= step) {
+      setErrors({});
+      setStep(target);
+      return;
+    }
+    for (let i = step; i < target; i++) {
+      if (!validateStep(i)) {
+        setStep(i);
+        return;
+      }
+    }
+    setStep(target);
+    setFurthest((f) => Math.max(f, target));
+  };
+
   const onSubmit = (e) => {
     e.preventDefault();
-    if (step < totalSteps - 1) {
-      if (validateStep(step)) setStep(step + 1);
-    } else {
-      submit();
-    }
+    if (step < totalSteps - 1) goToStep(step + 1);
+    else submit();
   };
+
+  const checks = passwordChecks(form.password, { email: form.email, name: form.name });
 
   const isLast = step === totalSteps - 1;
 
@@ -189,12 +213,27 @@ export default function Register() {
         <p className="au-eyebrow">Create an account</p>
         <p className="au-step-count">Step {step + 1} of {totalSteps}</p>
       </div>
-      <div className="au-steps" role="progressbar" aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={step + 1}
-        aria-label="Registration progress">
-        {Array.from({ length: totalSteps }, (_, i) => (
-          <span key={i} className={`au-step-bar${i <= step ? " done" : ""}`} />
-        ))}
-      </div>
+      <nav className="au-stepnav" aria-label="Registration steps">
+        <ol>
+          {STEPS.slice(0, totalSteps).map((s, i) => {
+            const state = i === step ? "current" : i < step || i <= furthest ? "done" : "todo";
+            const reachable = i <= Math.max(furthest, step) + 1;
+            return (
+              <li key={s.short} className={`au-stepnav-item ${state}`}>
+                <button
+                  type="button"
+                  onClick={() => goToStep(i)}
+                  disabled={!reachable || loading}
+                  aria-current={i === step ? "step" : undefined}
+                >
+                  <span className="au-stepnav-num" aria-hidden="true">{state === "done" && i !== step ? "\u2713" : i + 1}</span>
+                  <span className="au-stepnav-label">{s.short}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
 
       <h1 className="au-title" tabIndex={-1} ref={headingRef}>{STEPS[step].title}</h1>
       <p className="au-subtitle">{STEPS[step].subtitle}</p>
@@ -211,10 +250,11 @@ export default function Register() {
               hint="Password reset links are sent here." />
             <div className="au-row">
               <PasswordField id="password" label="Password" autoComplete="new-password"
-                value={form.password} onChange={onInput} error={errors.password} hint="At least 8 characters." />
+                value={form.password} onChange={onInput} error={errors.password} />
               <PasswordField id="confirm" label="Confirm password" autoComplete="new-password"
                 value={form.confirm} onChange={onInput} error={errors.confirm} />
             </div>
+            <PasswordStrength checks={checks} score={passwordScore(form.password, { email: form.email, name: form.name })} />
           </>
         )}
 
@@ -273,13 +313,13 @@ export default function Register() {
 
         <div className="au-actions">
           {step > 0 && (
-            <button type="button" className="au-back" onClick={() => { setServerError(""); setStep(step - 1); }} disabled={loading}>
+            <button type="button" className="au-back" onClick={() => goToStep(step - 1)} disabled={loading}>
               Back
             </button>
           )}
           <button type="submit" className="au-submit" disabled={loading}>
             {loading && <span className="au-spinner" aria-hidden="true" />}
-            {loading ? "Creating your account..." : isLast ? "Create account" : "Continue"}
+            {loading ? "Creating your account..." : isLast ? "Create account" : step < furthest ? "Save and continue" : "Continue"}
           </button>
         </div>
 

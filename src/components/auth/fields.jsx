@@ -36,7 +36,7 @@ export function TextField({ id, label, error, hint, labelAside, ...inputProps })
   );
 }
 
-export function PasswordField({ id, label, error, hint, labelAside, ...inputProps }) {
+export function PasswordField({ id, label, error, hint, labelAside, children, ...inputProps }) {
   const [visible, setVisible] = useState(false);
   return (
     <div className="au-field">
@@ -49,22 +49,46 @@ export function PasswordField({ id, label, error, hint, labelAside, ...inputProp
           id={id}
           name={id}
           type={visible ? "text" : "password"}
-          className="au-input"
+          className="au-input au-input-password"
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy(id, error, hint)}
           {...inputProps}
         />
         <button
           type="button"
-          className="au-reveal"
+          className="au-eye"
           onClick={() => setVisible(!visible)}
           aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
+          title={visible ? "Hide password" : "Show password"}
         >
-          {visible ? "Hide" : "Show"}
+          <Icon name={visible ? "eyeOff" : "eye"} size={20} strokeWidth={1.9} />
         </button>
       </div>
       <FieldMessage id={id} error={error} hint={hint} />
+      {children}
+    </div>
+  );
+}
+
+// Live list of password rules with a strength bar
+export function PasswordStrength({ checks, score }) {
+  const labels = ["", "Weak", "Fair", "Strong", "Very strong"];
+  return (
+    <div className="au-strength" aria-live="polite">
+      <div className="au-strength-bar" data-score={score}>
+        {[1, 2, 3, 4].map((i) => <span key={i} className={i <= score ? "on" : ""} />)}
+      </div>
+      {score > 0 && <p className="au-strength-label">Password strength: <strong>{labels[score]}</strong></p>}
+      <ul className="au-rules">
+        {checks.map((c) => (
+          <li key={c.id} className={c.met ? "met" : ""}>
+            <Icon name={c.met ? "check" : "dot"} size={14} strokeWidth={2.6} />
+            <span>{c.label}</span>
+            <span className="au-sr">{c.met ? " (done)" : " (still needed)"}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
