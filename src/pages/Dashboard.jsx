@@ -6,11 +6,11 @@ import Help from "../components/dashboard/Help";
 import { GradeSpreadChart, TrendChart } from "../components/dashboard/charts";
 import { useAuth } from "../context/AuthContext";
 import { useProgrammes } from "../context/ProgrammeContext";
-import { getActiveAnnouncements, getDashboard, getInsights, setAreaLabel } from "../services/api";
+import { downloadTranscript, getActiveAnnouncements, getDashboard, getInsights, setAreaLabel } from "../services/api";
 import { classStyle } from "../utils/academic";
 import campusPhoto from "../assets/landing/campus-13-800.webp";
 
-const ACTION_ICONS = { start: "results", urgent: "alert", target: "target", trend: "chart", area: "layers", course: "results", update: "results" };
+const ACTION_ICONS = { start: "results", urgent: "alert", target: "target", trend: "chart", area: "layers", course: "results", update: "results", topup: "layers" };
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "strengths", label: "Strengths and weaknesses" },
@@ -276,6 +276,50 @@ function AreaRow({ area, cgpa, enrollmentId, onSaved }) {
   );
 }
 
+/** Shown instead of the next-class target once a programme is finished. */
+function FinalResultCard({ summary: s, overview, enrollmentId, target, estimate, onCredits }) {
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const cls = classStyle(s.classification);
+  const award = overview.award_type === "diploma" ? "diploma" : "degree";
+
+  const download = async () => {
+    setBusy(true);
+    setFailed(false);
+    try {
+      await downloadTranscript(overview.status === "completed" ? enrollmentId : undefined,
+        `transcript_${overview.index_number || "programme"}.pdf`);
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="db-card db-final" aria-labelledby="db-final">
+      <div className="db-card-head">
+        <h2 id="db-final" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="check" size={16} /></span>Your final result</h2>
+      </div>
+      <div className="db-final-score">
+        <strong>{s.cgpa.toFixed(2)}</strong>
+        <span className="db-pill" style={{ color: cls.color, background: cls.bg, borderColor: cls.border }}>{s.classification}</span>
+      </div>
+      <dl className="db-final-facts">
+        <div><dt>Credits</dt><dd>{s.credits_completed}</dd></div>
+        <div><dt>Courses</dt><dd>{s.courses_completed}</dd></div>
+        <div><dt>Best semester</dt><dd>{s.best_semester.gpa.toFixed(2)}</dd></div>
+      </dl>
+      <p className="db-body">Your {award} CGPA is final unless a result changes.</p>
+      <button type="button" className="db-btn" onClick={download} disabled={busy}>
+        <Icon name="document" size={18} /> {busy ? "Preparing PDF..." : "Download transcript"}
+      </button>
+      {failed && <p className="db-note" role="alert">The transcript could not be downloaded. Please try again.</p>}
+      <TargetEditor target={target} estimate={estimate} onChange={onCredits} />
+    </section>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -497,30 +541,35 @@ export default function Dashboard() {
                   <TrendChart history={insights.history} bands={insights.classification_bands} />
                 </section>
 
+                {overview.completed && !insights.target ? (
+                  <FinalResultCard summary={s} overview={overview} enrollmentId={insights.enrollment_id}
+                    target={insights.target} estimate={insights.estimate} onCredits={setRemainingCredits} />
+                ) : (
                 <section className="db-card db-target" aria-labelledby="db-target">
-                  <div className="db-card-head">
-                    <h2 id="db-target" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="target" size={16} /></span>Reaching {s.next_class || "the top"}</h2>
-                  </div>
-                  {!s.next_class ? (
-                    <p className="db-body">You are already in the highest class. Keep your semester GPAs at this level to hold it.</p>
-                  ) : insights.target ? (
-                    insights.target.achievable ? (
-                      <>
-                        <p className="db-target-lead">Average this grade in your remaining courses:</p>
-                        <p className="db-target-grade"><strong>{insights.target.required_grade}</strong><span>or better</span></p>
-                      </>
+                    <div className="db-card-head">
+                      <h2 id="db-target" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="target" size={16} /></span>Reaching {s.next_class || "the top"}</h2>
+                    </div>
+                    {!s.next_class ? (
+                      <p className="db-body">You are already in the highest class. Keep your semester GPAs at this level to hold it.</p>
+                    ) : insights.target ? (
+                      insights.target.achievable ? (
+                        <>
+                          <p className="db-target-lead">Average this grade in your remaining courses:</p>
+                          <p className="db-target-grade"><strong>{insights.target.required_grade}</strong><span>or better</span></p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="db-target-lead"><strong>{insights.target.target_class}</strong> is out of reach with the credits left.</p>
+                          <p className="db-body">The highest CGPA still possible is <strong>{insights.target.max_possible_cgpa.toFixed(2)}</strong>. Focus on holding your {s.classification}.</p>
+                        </>
+                      )
                     ) : (
-                      <>
-                        <p className="db-target-lead"><strong>{insights.target.target_class}</strong> is out of reach with the credits left.</p>
-                        <p className="db-body">The highest CGPA still possible is <strong>{insights.target.max_possible_cgpa.toFixed(2)}</strong>. Focus on holding your {s.classification}.</p>
-                      </>
-                    )
-                  ) : (
-                    <p className="db-body">Every semester of this programme is recorded, so your CGPA is final unless a result changes.</p>
-                  )}
-                  {s.next_class && <TargetEditor target={insights.target} estimate={insights.estimate} onChange={setRemainingCredits} />}
-                  <Link to="/planner" className="db-btn db-btn-ghost">Try different grades in the planner</Link>
+                      <p className="db-body">Every semester of this programme is recorded, so your CGPA is final unless a result changes.</p>
+                    )}
+                    {s.next_class && <TargetEditor target={insights.target} estimate={insights.estimate} onChange={setRemainingCredits} />}
+                    <Link to="/planner" className="db-btn db-btn-ghost">Try different grades in the planner</Link>
                 </section>
+                )}
               </div>
             </div>
           )}

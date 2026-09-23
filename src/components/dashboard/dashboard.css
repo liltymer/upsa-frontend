@@ -597,6 +597,20 @@
   .db-stage { gap: 12px; }
 }
 
+/* ---------- Final result ---------- */
+
+.db-final { display: grid; align-content: start; gap: 14px; }
+.db-final .db-card-head { margin-bottom: 0; }
+.db-final-score { display: flex; align-items: center; gap: 12px; }
+.db-final-score strong { font-family: var(--font-heading); font-weight: 800; font-size: 44px; line-height: 1; color: var(--navy); }
+.db-final-facts { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.db-final-facts div { padding: 10px 12px; border-radius: 10px; background: var(--db-soft); }
+.db-final-facts dt { font-size: 12px; color: var(--db-muted); font-weight: 600; }
+.db-final-facts dd { margin: 2px 0 0; font-family: var(--font-heading); font-weight: 800; font-size: 18px; color: var(--navy); }
+.db-final .db-body { margin: 0; }
+.db-final .db-btn { justify-self: start; }
+.db-final .db-target-credits { margin: 0; }
+
 /* ---------- Entrance motion ---------- */
 
 @keyframes db-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
