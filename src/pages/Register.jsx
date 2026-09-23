@@ -1,336 +1,268 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { registerStudent, getErrorMessage } from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import { registerStudent } from "../services/api";
+import { authErrorMessage, homeFor, startSession } from "../services/session";
 import useReferenceData from "../hooks/useReferenceData";
+import AuthLayout from "../components/auth/AuthLayout";
+import { Alert, PasswordField, SelectField, TextField } from "../components/auth/fields";
 
 const LEVELS = [100, 200, 300, 400];
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SLOW_AFTER_MS = 5000;
+
+const STEPS = [
+  { title: "About you", subtitle: "Your name and the details you will sign in with." },
+  { title: "Your programme", subtitle: "The UPSA programme you are on now." },
+  { title: "Your diploma", subtitle: "Optional. Record the diploma you completed before your top-up." },
+];
+
+const EMPTY = {
+  name: "", email: "", password: "", confirm: "",
+  is_top_up: false, programme: "", level: "", academic_year: "", index_number: "",
+  prev_programme: "", prev_index_number: "", prev_start_year: "",
+};
 
 export default function Register() {
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const { programmes, academic_years: academicYears } = useReferenceData();
-  const [form, setForm] = useState({
-    name: "", index_number: "", email: "", password: "", confirm_password: "",
-    programme: "", level: "", academic_year: "",
-    is_top_up: false,
-    prev_index_number: "", prev_programme: "", prev_start_year: "",
-  });
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const { programmes, academic_years: academicYears, current_academic_year: currentYear } = useReferenceData();
+
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState(EMPTY);
+  const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [slow, setSlow] = useState(false);
+  const slowTimer = useRef(null);
+  const headingRef = useRef(null);
+  const firstRender = useRef(true);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const next = { ...form, [name]: type === "checkbox" ? checked : value };
-    // A top-up starts at Level 300 of a degree
-    if (name === "is_top_up") {
-      next.level = checked ? "300" : "";
-      if (checked && next.programme.toLowerCase().startsWith("diploma")) next.programme = "";
-    }
-    setForm(next);
-    setError("");
-  };
+  useEffect(() => () => clearTimeout(slowTimer.current), []);
 
+  // Move focus to the new step heading for keyboard and screen reader users
+  useEffect(() => {
+    if (firstRender.current) { firstRender.current = false; return; }
+    headingRef.current?.focus();
+  }, [step]);
+
+  const academicYear = form.academic_year || currentYear || "";
+  const totalSteps = form.is_top_up ? 3 : 2;
   const isDiploma = form.programme.toLowerCase().startsWith("diploma");
-  const programmeOptions = programmes.filter((p) => !form.is_top_up || p.award_type === "degree");
-  const diplomaOptions = programmes.filter((p) => p.award_type === "diploma");
-  const levelOptions = LEVELS.filter((l) => {
-    if (form.is_top_up) return l >= 300;
-    if (isDiploma) return l <= 200;
-    return true;
-  });
+  const programmeOptions = programmes
+    .filter((p) => !form.is_top_up || p.award_type === "degree")
+    .map((p) => p.name);
+  const diplomaOptions = programmes.filter((p) => p.award_type === "diploma").map((p) => p.name);
+  const levelOptions = LEVELS
+    .filter((l) => (form.is_top_up ? l >= 300 : !isDiploma || l <= 200))
+    .map((l) => ({ value: String(l), label: `Level ${l}` }));
 
-  const handleNextStep = (e) => {
-    e.preventDefault();
-    setError("");
-    if (!form.name.trim()) return setError("Please enter your full name.");
-    if (!form.index_number.trim()) return setError("Please enter your index number.");
-    if (!form.email.trim()) return setError("Please enter your email.");
-    if (form.password.length < 8) return setError("Password must be at least 8 characters.");
-    if (form.password !== form.confirm_password) return setError("Passwords do not match.");
-    setStep(2);
+  const update = (name, value) => {
+    setForm((f) => {
+      const next = { ...f, [name]: value };
+      if (name === "is_top_up") {
+        next.level = value ? "300" : "";
+        if (value && next.programme.toLowerCase().startsWith("diploma")) next.programme = "";
+      }
+      if (name === "programme" && value.toLowerCase().startsWith("diploma") && Number(next.level) > 200) {
+        next.level = "";
+      }
+      return next;
+    });
+    setErrors((e) => ({ ...e, [name]: "" }));
+    setServerError("");
+  };
+  const onInput = (e) => update(e.target.name, e.target.value);
+
+  const validateStep = (index) => {
+    const e = {};
+    if (index === 0) {
+      if (form.name.trim().length < 2) e.name = "Enter your full name.";
+      if (!EMAIL_PATTERN.test(form.email.trim())) e.email = "Enter a valid email address.";
+      if (form.password.length < 8) e.password = "Use at least 8 characters.";
+      if (form.confirm !== form.password) e.confirm = "The passwords do not match.";
+    }
+    if (index === 1) {
+      if (!form.programme) e.programme = "Choose your programme.";
+      if (!form.level) e.level = "Choose your level.";
+      if (!academicYear) e.academic_year = "Choose the current academic year.";
+      if (!form.index_number.trim()) e.index_number = "Enter your index number.";
+    }
+    if (index === 2 && form.prev_programme) {
+      if (!form.prev_start_year) e.prev_start_year = "Choose the year your diploma started.";
+      if (form.prev_index_number.trim() && form.prev_index_number.trim() === form.index_number.trim()) {
+        e.prev_index_number = "Use a different index number from your degree.";
+      }
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (!form.programme) return setError("Please select your programme.");
-    if (!form.level) return setError("Please select your level.");
-    if (!form.academic_year) return setError("Please select your academic year.");
-    if (form.is_top_up && form.prev_programme && !form.prev_start_year) {
-      return setError("Please select the year your diploma started.");
-    }
+  const submit = async () => {
+    if (!validateStep(step)) return;
     setLoading(true);
+    setServerError("");
+    slowTimer.current = setTimeout(() => setSlow(true), SLOW_AFTER_MS);
+    let registered = false;
     try {
       await registerStudent({
-        name: form.name,
-        index_number: form.index_number,
-        email: form.email,
+        name: form.name.trim(),
+        email: form.email.trim(),
         password: form.password,
         programme: form.programme,
         level: Number(form.level),
-        academic_year: form.academic_year,
+        academic_year: academicYear,
+        index_number: form.index_number.trim(),
         is_top_up: form.is_top_up,
         previous_programme: form.is_top_up && form.prev_programme
           ? {
-              index_number: form.prev_index_number.trim() || null,
               programme: form.prev_programme,
+              index_number: form.prev_index_number.trim() || null,
               start_academic_year: form.prev_start_year,
             }
           : null,
       });
-      setSuccess("Account created! Redirecting to login...");
-      setTimeout(() => navigate("/login"), 2000);
+      registered = true;
+      // Account created: sign straight in
+      const userData = await startSession(login, form.email.trim(), form.password);
+      navigate(homeFor(userData));
     } catch (err) {
-      setError(getErrorMessage(err, "Registration failed. Try again."));
+      if (registered) {
+        // The account exists; only the automatic sign-in failed
+        navigate("/login", { state: { registered: true } });
+      } else if (err.response?.status === 409) {
+        setServerError("An account with this email or index number already exists. Sign in instead, or check the details you entered.");
+      } else {
+        setServerError(authErrorMessage(err, "We could not create your account. Please check your details and try again."));
+      }
     } finally {
+      clearTimeout(slowTimer.current);
+      setSlow(false);
       setLoading(false);
     }
   };
 
+  const onSubmit = (e) => {
+    e.preventDefault();
+    if (step < totalSteps - 1) {
+      if (validateStep(step)) setStep(step + 1);
+    } else {
+      submit();
+    }
+  };
+
+  const isLast = step === totalSteps - 1;
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", fontFamily: "var(--font-body)", background: "var(--navy)" }}>
-
-      <div className="login-left" style={{ width: "50%", minHeight: "100vh", background: "linear-gradient(160deg, #060f2e 0%, var(--navy) 50%, #0a2050 100%)", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 52px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -180, right: -180, width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,192,5,0.08) 0%, transparent 65%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: -120, left: -120, width: 360, height: 360, borderRadius: "50%", background: "radial-gradient(circle, rgba(26,58,122,0.6) 0%, transparent 65%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, transparent, var(--gold), transparent)" }} />
-
-        <div style={{ position: "relative", zIndex: 10, textAlign: "center", width: "100%", maxWidth: 380 }}>
-          <div style={{ width: 100, height: 100, borderRadius: "50%", background: "rgba(255,192,5,0.08)", border: "1.5px solid rgba(255,192,5,0.2)", boxShadow: "0 0 0 8px rgba(255,192,5,0.04), 0 20px 60px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", padding: 14, overflow: "hidden" }}>
-            <img src="/upsa-logo.png" alt="UPSA" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(1.15)" }} onError={(e) => { e.target.style.display = "none"; }} />
-          </div>
-
-          <div className="badge badge-navy" style={{ margin: "0 auto 12px", display: "inline-flex" }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--gold)" }} />
-            GradeIQ UPSA
-          </div>
-
-          <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 17, color: "rgba(255,255,255,0.6)", marginBottom: 20, lineHeight: 1.4 }}>
-            University of Professional<br />Studies, Accra
-          </h2>
-
-          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 32, color: "var(--gold)", lineHeight: 1.2, letterSpacing: "-0.02em", marginBottom: 4 }}>Start Your</h1>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 32, color: "white", lineHeight: 1.2, letterSpacing: "-0.02em", marginBottom: 16 }}>Academic Journey.</h1>
-
-          <div style={{ width: 40, height: 3, background: "linear-gradient(90deg, var(--gold), var(--gold-deep))", borderRadius: 999, margin: "0 auto 16px" }} />
-
-          <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, lineHeight: 1.8, maxWidth: 300, margin: "0 auto 32px" }}>
-            Create your account to start tracking your CGPA, monitoring academic risk, and planning your path to graduation.
-          </p>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left", marginBottom: 40 }}>
-            {[
-              { num: "01", text: "Create your account" },
-              { num: "02", text: "Add your academic profile" },
-              { num: "03", text: "Enter your semester results" },
-              { num: "04", text: "Track your CGPA instantly" },
-            ].map((item, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: step === i + 1 ? "rgba(255,192,5,0.1)" : "rgba(255,255,255,0.03)", border: "1px solid " + (step === i + 1 ? "rgba(255,192,5,0.25)" : "rgba(255,255,255,0.06)"), borderRadius: "var(--radius-sm)", transition: "var(--transition)" }}>
-                <span style={{ width: 28, height: 28, borderRadius: 8, background: step > i ? "var(--gold)" : "rgba(255,192,5,0.1)", border: "1px solid " + (step > i ? "var(--gold)" : "rgba(255,192,5,0.25)"), display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 10, color: step > i ? "var(--navy)" : "var(--gold)", flexShrink: 0 }}>
-                  {step > i ? "✓" : item.num}
-                </span>
-                <span style={{ color: step === i + 1 ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)", fontSize: 13, fontFamily: "var(--font-heading)", fontWeight: step === i + 1 ? 700 : 400 }}>
-                  {item.text}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 16 }}>
-            <p style={{ color: "rgba(255,255,255,0.15)", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "var(--font-heading)", marginBottom: 5 }}>Scholarship with Professionalism</p>
-            <p style={{ color: "rgba(255,192,5,0.25)", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "var(--font-heading)" }}>Developed by Ahenkora Joshua Owusu</p>
-          </div>
-        </div>
+    <AuthLayout
+      topbar={
+        <>
+          <span>Already have an account?</span>
+          <Link to="/login">Sign in</Link>
+        </>
+      }
+      panelTitle={<>Start tracking <em>this semester.</em></>}
+      panelBody="Create your account, add the results from your result slip, and see where you stand on the UPSA scale."
+    >
+      <div className="au-step-head">
+        <p className="au-eyebrow">Create an account</p>
+        <p className="au-step-count">Step {step + 1} of {totalSteps}</p>
+      </div>
+      <div className="au-steps" role="progressbar" aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={step + 1}
+        aria-label="Registration progress">
+        {Array.from({ length: totalSteps }, (_, i) => (
+          <span key={i} className={`au-step-bar${i <= step ? " done" : ""}`} />
+        ))}
       </div>
 
-      <div style={{ flex: 1, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--bg-page)", padding: "32px 24px", position: "relative", overflowY: "auto" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 15% 15%, rgba(8,28,70,0.04) 0%, transparent 50%), radial-gradient(circle at 85% 85%, rgba(255,192,5,0.05) 0%, transparent 50%)", pointerEvents: "none" }} />
+      <h1 className="au-title" tabIndex={-1} ref={headingRef}>{STEPS[step].title}</h1>
+      <p className="au-subtitle">{STEPS[step].subtitle}</p>
 
-        <div className="mobile-header" style={{ display: "none", alignItems: "center", gap: 10, marginBottom: 24, alignSelf: "flex-start", position: "relative", zIndex: 1 }}>
-          <div style={{ width: 36, height: 36, background: "var(--navy)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", padding: 5, overflow: "hidden" }}>
-            <img src="/upsa-logo.png" alt="UPSA" style={{ width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; }} />
-          </div>
-          <div>
-            <p style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 13, color: "var(--navy)" }}>GradeIQ UPSA</p>
-            <p style={{ fontSize: 10, color: "var(--text-muted)" }}>Smart Academic Platform</p>
-          </div>
-        </div>
+      <form className="au-form" onSubmit={onSubmit} noValidate>
+        {serverError && <Alert>{serverError}</Alert>}
 
-        <div style={{ width: "100%", maxWidth: 460, position: "relative", zIndex: 1 }}>
+        {step === 0 && (
+          <>
+            <TextField id="name" label="Full name" autoComplete="name" placeholder="As it appears on your student records"
+              value={form.name} onChange={onInput} error={errors.name} />
+            <TextField id="email" label="Email address" type="email" autoComplete="email" autoCapitalize="none" spellCheck="false"
+              placeholder="you@example.com" value={form.email} onChange={onInput} error={errors.email}
+              hint="Password reset links are sent here." />
+            <div className="au-row">
+              <PasswordField id="password" label="Password" autoComplete="new-password" placeholder="8 or more characters"
+                value={form.password} onChange={onInput} error={errors.password} />
+              <PasswordField id="confirm" label="Confirm password" autoComplete="new-password" placeholder="Type it again"
+                value={form.confirm} onChange={onInput} error={errors.confirm} />
+            </div>
+          </>
+        )}
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-            {[1, 2].map((s) => (
-              <div key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", background: step >= s ? "var(--navy)" : "var(--border)", color: step >= s ? "var(--gold)" : "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 12, transition: "all 0.3s", flexShrink: 0 }}>
-                  {step > s ? "✓" : s}
-                </div>
-                <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 12, color: step >= s ? "var(--navy)" : "var(--text-muted)", whiteSpace: "nowrap" }}>
-                  {s === 1 ? "Personal Info" : "Academic Profile"}
-                </span>
-                {s === 1 && (
-                  <div style={{ width: 28, height: 2, background: step > 1 ? "var(--navy)" : "var(--border)", borderRadius: 999, transition: "all 0.3s" }} />
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ background: "var(--bg-card)", borderRadius: "var(--radius-xl)", padding: "36px 36px", boxShadow: "0 0 0 1px rgba(8,28,70,0.06), 0 4px 6px rgba(8,28,70,0.04), 0 20px 60px rgba(8,28,70,0.1)" }}>
-            <div style={{ width: 40, height: 3, background: "linear-gradient(90deg, var(--navy), var(--gold))", borderRadius: 999, marginBottom: 24 }} />
-
-            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, color: "var(--navy)", marginBottom: 6, letterSpacing: "-0.02em" }}>
-              {step === 1 ? "Create your account" : "Your academic profile"}
-            </h2>
-            <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 24 }}>
-              {step === 1 ? "Fill in your personal details to get started." : "Tell us about your programme and current level."}
-            </p>
-
-            {error && <div className="alert alert-red" style={{ marginBottom: 20 }}>{error}</div>}
-            {success && <div className="alert alert-green" style={{ marginBottom: 20 }}>{success}</div>}
-
-            {step === 1 && (
-              <form onSubmit={handleNextStep}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
-                  <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                    <label className="form-label">Full Name</label>
-                    <input type="text" name="name" placeholder="e.g. Micheal Scofield" value={form.name} onChange={handleChange} required className="form-input" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Index Number</label>
-                    <input type="text" name="index_number" placeholder="e.g. 20260006" value={form.index_number} onChange={handleChange} required className="form-input" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Email Address</label>
-                    <input type="email" name="email" placeholder="youraddress@gmail.com" value={form.email} onChange={handleChange} required className="form-input" />
-                  <p style={{
-                     fontSize: 11,
-                     color: "var(--text-muted)",
-                     marginTop: 4,
-                     fontFamily: "var(--font-heading)",
-                    }}>
-                     Use a Gmail address to enable password reset via email.
-                  </p>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Password</label>
-                    <input type="password" name="password" placeholder="Min. 8 characters" value={form.password} onChange={handleChange} required className="form-input" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Confirm Password</label>
-                    <input type="password" name="confirm_password" placeholder="Re-enter password" value={form.confirm_password} onChange={handleChange} required className="form-input" />
-                  </div>
-                </div>
-                <button type="submit" className="btn btn-primary btn-lg btn-full" style={{ marginTop: 24 }}>Continue</button>
-              </form>
-            )}
-
-            {step === 2 && (
-              <form onSubmit={handleSubmit}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                  <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", fontSize: 13, color: "var(--navy)" }}>
-                    <input type="checkbox" name="is_top_up" checked={form.is_top_up} onChange={handleChange} style={{ marginTop: 3 }} />
-                    <span>
-                      <strong>I am a top-up student</strong> (diploma → degree)
-                      <span style={{ display: "block", fontSize: 12, color: "var(--text-muted)" }}>
-                        Use your NEW index number above. Your diploma keeps its own CGPA.
-                      </span>
-                    </span>
+        {step === 1 && (
+          <>
+            <fieldset className="au-choice">
+              <legend className="au-label">Are you a top-up student?</legend>
+              <div className="au-choice-options">
+                {[
+                  { value: false, label: "No", note: "I started my programme at Level 100" },
+                  { value: true, label: "Yes", note: "I topped up from a UPSA diploma" },
+                ].map((opt) => (
+                  <label key={opt.label} className={`au-choice-card${form.is_top_up === opt.value ? " selected" : ""}`}>
+                    <input type="radio" name="is_top_up" checked={form.is_top_up === opt.value}
+                      onChange={() => update("is_top_up", opt.value)} />
+                    <span><strong>{opt.label}</strong><small>{opt.note}</small></span>
                   </label>
-                  <div className="form-group">
-                    <label className="form-label">{form.is_top_up ? "Degree Programme" : "Programme / Course of Study"}</label>
-                    <select name="programme" value={form.programme} onChange={handleChange} required className="form-input form-select">
-                      <option value="">Select your programme...</option>
-                      {programmeOptions.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
-                    </select>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
-                    <div className="form-group">
-                      <label className="form-label">Current Level</label>
-                      <select name="level" value={form.level} onChange={handleChange} required className="form-input form-select">
-                        <option value="">Select level...</option>
-                        {levelOptions.map((l) => (<option key={l} value={l}>Level {l}</option>))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Current Academic Year</label>
-                      <select name="academic_year" value={form.academic_year} onChange={handleChange} required className="form-input form-select">
-                        <option value="">Select year...</option>
-                        {academicYears.map((y) => (<option key={y} value={y}>{y}</option>))}
-                      </select>
-                    </div>
-                  </div>
+                ))}
+              </div>
+            </fieldset>
+            <SelectField id="programme" label={form.is_top_up ? "Degree programme" : "Programme"} placeholder="Choose your programme"
+              options={programmeOptions} value={form.programme} onChange={onInput} error={errors.programme} />
+            <div className="au-row">
+              <SelectField id="level" label="Current level" placeholder="Choose level" options={levelOptions}
+                value={form.level} onChange={onInput} error={errors.level} />
+              <SelectField id="academic_year" label="Academic year" placeholder="Choose year" options={academicYears}
+                value={academicYear} onChange={onInput} error={errors.academic_year} />
+            </div>
+            <TextField id="index_number" label={form.is_top_up ? "Degree index number" : "Index number"}
+              autoComplete="off" spellCheck="false" placeholder="e.g. 10324631"
+              value={form.index_number} onChange={onInput} error={errors.index_number}
+              hint={form.is_top_up ? "The new index number you received for your degree." : "You can sign in with this or your email."} />
+          </>
+        )}
 
-                  {form.is_top_up && (
-                    <div style={{ border: "1.5px dashed var(--border)", borderRadius: "var(--radius-md)", padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-                      <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 13, color: "var(--navy)" }}>
-                        Your diploma (optional — you can add it later)
-                      </p>
-                      <div className="form-group">
-                        <label className="form-label">Diploma Programme</label>
-                        <select name="prev_programme" value={form.prev_programme} onChange={handleChange} className="form-input form-select">
-                          <option value="">Select diploma...</option>
-                          {diplomaOptions.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
-                        </select>
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
-                        <div className="form-group">
-                          <label className="form-label">Diploma Index Number</label>
-                          <input type="text" name="prev_index_number" placeholder="e.g. 10324631" value={form.prev_index_number} onChange={handleChange} className="form-input" />
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label">Diploma Started</label>
-                          <select name="prev_start_year" value={form.prev_start_year} onChange={handleChange} className="form-input form-select">
-                            <option value="">Select year...</option>
-                            {academicYears.map((y) => (<option key={y} value={y}>{y}</option>))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+        {step === 2 && (
+          <>
+            <SelectField id="prev_programme" label="Diploma programme" placeholder="Choose your diploma (optional)"
+              options={diplomaOptions} value={form.prev_programme} onChange={onInput} error={errors.prev_programme} />
+            <div className="au-row">
+              <TextField id="prev_index_number" label="Diploma index number" autoComplete="off" spellCheck="false"
+                placeholder="Optional" value={form.prev_index_number} onChange={onInput} error={errors.prev_index_number} />
+              <SelectField id="prev_start_year" label="Diploma started" placeholder="Choose year" options={academicYears}
+                value={form.prev_start_year} onChange={onInput} error={errors.prev_start_year} />
+            </div>
+            <Alert tone="info">Your diploma keeps its own CGPA and class. You can also add it later from your profile.</Alert>
+          </>
+        )}
 
-                  {form.programme && form.level && form.academic_year && (
-                    <div style={{ background: "var(--bg-page)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", padding: "14px 16px" }}>
-                      <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 13, color: "var(--navy)", marginBottom: 3 }}>{form.name}</p>
-                      <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-                        {form.programme}<br />Level {form.level} - {form.academic_year}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-                  <button type="button" onClick={() => setStep(1)} className="btn btn-outline" style={{ flex: 1 }}>Back</button>
-                  <button type="submit" disabled={loading} className="btn btn-primary btn-lg" style={{ flex: 2 }}>
-                    {loading ? (<><span className="spinner" />Creating account...</>) : "Create Account"}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-
-          <p style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", marginTop: 20, lineHeight: 1.7 }}>
-            Already have an account?{" "}
-            <Link to="/login" style={{ color: "var(--navy)", fontFamily: "var(--font-heading)", fontWeight: 700, borderBottom: "1px solid var(--gold)", paddingBottom: 1 }}>
-              Sign in here
-            </Link>
-            <br />
-            <span style={{ fontSize: 11, color: "#C8C9D0", fontFamily: "var(--font-heading)" }}>
-              2026 GradeIQ UPSA - Developed by Ahenkora Joshua Owusu
-            </span>
-          </p>
+        <div className="au-actions">
+          {step > 0 && (
+            <button type="button" className="au-back" onClick={() => { setServerError(""); setStep(step - 1); }} disabled={loading}>
+              Back
+            </button>
+          )}
+          <button type="submit" className="au-submit" disabled={loading}>
+            {loading && <span className="au-spinner" aria-hidden="true" />}
+            {loading ? "Creating your account..." : isLast ? "Create account" : "Continue"}
+          </button>
         </div>
-      </div>
 
-      <style>{`
-        @media (max-width: 768px) {
-          .login-left { display: none !important; }
-          .mobile-header { display: flex !important; }
-        }
-        @media (min-width: 769px) {
-          .login-left { display: flex !important; }
-          .mobile-header { display: none !important; }
-        }
-      `}</style>
-    </div>
+        {slow && (
+          <Alert tone="info">The server is starting up after a quiet period. This can take up to a minute, please keep this page open.</Alert>
+        )}
+      </form>
+
+      <p className="au-note">
+        GradeIQ is an independent student project, not an official UPSA service. Only you can see the results you enter.
+      </p>
+    </AuthLayout>
   );
 }

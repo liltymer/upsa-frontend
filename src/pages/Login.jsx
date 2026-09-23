@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { loginStudent, getDashboard, getErrorMessage } from "../services/api";
+import { authErrorMessage, homeFor, startSession } from "../services/session";
 import AuthLayout from "../components/auth/AuthLayout";
 import Icon from "../components/landing/Icon";
 
@@ -11,6 +11,7 @@ const SLOW_AFTER_MS = 5000;
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const justRegistered = Boolean(useLocation().state?.registered);
   const [form, setForm] = useState({ username: "", password: "" });
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
@@ -43,30 +44,10 @@ export default function Login() {
     setError("");
     slowTimer.current = setTimeout(() => setSlow(true), SLOW_AFTER_MS);
     try {
-      const tokenData = await loginStudent(form.username.trim(), form.password);
-      localStorage.setItem("token", tokenData.access_token);
-      const userData = await getDashboard();
-      login(tokenData.access_token, {
-        name: userData.name,
-        index_number: userData.index_number,
-        cgpa: userData.cgpa,
-        classification: userData.classification,
-        role: userData.role,
-        academic_year: userData.academic_year,
-        programme: userData.programme,
-        level: userData.level,
-      });
-      navigate(userData.role === "admin" ? "/admin" : "/dashboard");
+      const userData = await startSession(login, form.username.trim(), form.password);
+      navigate(homeFor(userData));
     } catch (err) {
-      // Never leave a half-finished session behind
-      localStorage.removeItem("token");
-      if (!err.response) {
-        setError("We could not reach the server. Check your internet connection and try again.");
-      } else if (err.response.status === 429) {
-        setError("Too many sign-in attempts. Please wait a few minutes and try again.");
-      } else {
-        setError(getErrorMessage(err, "The email, index number or password is incorrect."));
-      }
+      setError(authErrorMessage(err, "The email, index number or password is incorrect."));
     } finally {
       clearTimeout(slowTimer.current);
       setSlow(false);
@@ -90,6 +71,12 @@ export default function Login() {
       <p className="au-subtitle">Use your email address or your UPSA index number.</p>
 
       <form className="au-form" onSubmit={handleSubmit} noValidate>
+        {justRegistered && !error && (
+          <div className="au-alert au-alert-success" role="status">
+            <Icon name="check" size={18} strokeWidth={2} />
+            <span>Your account has been created. Sign in to continue.</span>
+          </div>
+        )}
         {error && (
           <div className="au-alert au-alert-error" role="alert">
             <Icon name="alert" size={18} strokeWidth={2} />
