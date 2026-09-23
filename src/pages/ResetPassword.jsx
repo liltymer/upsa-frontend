@@ -1,410 +1,143 @@
-import { useState, useEffect } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import API, { getErrorMessage } from "../services/api";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { resetPassword, verifyResetToken } from "../services/api";
+import { authErrorMessage } from "../services/session";
+import AuthLayout from "../components/auth/AuthLayout";
+import { Alert, PasswordField, PasswordStrength } from "../components/auth/fields";
+import Icon from "../components/landing/Icon";
+import { isStrongPassword, passwordChecks, passwordScore } from "../utils/password";
+
+const REDIRECT_AFTER_MS = 3000;
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get("token");
+  const token = searchParams.get("token") || "";
 
-  const [form, setForm] = useState({
-    password: "", confirm_password: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [verifying, setVerifying] = useState(true);
-  const [tokenValid, setTokenValid] = useState(false);
+  // checking | ready | invalid | done
+  const [status, setStatus] = useState(token ? "checking" : "invalid");
+  const [invalidReason, setInvalidReason] = useState(token ? "" : "This reset link is incomplete.");
+  const [form, setForm] = useState({ password: "", confirm: "" });
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Verify token on mount
+  // Check the link before showing the form
   useEffect(() => {
-    const verifyToken = async () => {
-      if (!token) {
-        setError("Invalid reset link. Please request a new one.");
-        setVerifying(false);
-        return;
-      }
-      try {
-        await API.get(`/auth/verify-reset-token/${token}`);
-        setTokenValid(true);
-      } catch (err) {
-        setError(
-          getErrorMessage(err, "This reset link is invalid or has expired.")
-        );
-      } finally {
-        setVerifying(false);
-      }
-    };
-    verifyToken();
+    if (!token) return undefined;
+    let active = true;
+    verifyResetToken(token)
+      .then(() => active && setStatus("ready"))
+      .catch((err) => {
+        if (!active) return;
+        setInvalidReason(authErrorMessage(err, "This reset link is invalid or has expired."));
+        setStatus("invalid");
+      });
+    return () => { active = false; };
   }, [token]);
+
+  useEffect(() => {
+    if (status !== "done") return undefined;
+    const timer = setTimeout(() => navigate("/login"), REDIRECT_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [status, navigate]);
+
+  const onInput = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" });
+    setError("");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-
-    if (form.password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (form.password !== form.confirm_password) {
-      setError("Passwords do not match.");
-      return;
-    }
+    const next = {};
+    if (!isStrongPassword(form.password)) next.password = "Choose a stronger password that meets every rule below.";
+    if (form.confirm !== form.password) next.confirm = "The passwords do not match.";
+    setErrors(next);
+    if (Object.keys(next).length) return;
 
     setLoading(true);
+    setError("");
     try {
-      await API.post("/auth/reset-password", {
-        token,
-        new_password: form.password,
-      });
-      setSuccess(true);
-      setTimeout(() => navigate("/login"), 3000);
+      await resetPassword(token, form.password);
+      setStatus("done");
     } catch (err) {
-      setError(
-        getErrorMessage(err, "Failed to reset password. Try again.")
-      );
+      const message = authErrorMessage(err, "We could not reset your password. Please try again.");
+      // An expired or already used link cannot be retried
+      if (/expired|invalid/i.test(message)) {
+        setInvalidReason(message);
+        setStatus("invalid");
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const topbar = (
+    <>
+      <span>Remembered it?</span>
+      <Link to="/login">Sign in</Link>
+    </>
+  );
+
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "var(--navy)",
-      fontFamily: "var(--font-body)",
-      padding: "32px 24px",
-      position: "relative",
-      overflow: "hidden",
-    }}>
+    <AuthLayout
+      topbar={topbar}
+      panelTitle={<>A fresh start for <em>your account.</em></>}
+      panelBody="Choose a strong password you have not used here before. Your results and programmes stay exactly as they are."
+    >
+      {status === "checking" && (
+        <div className="au-state" role="status">
+          <div className="au-state-icon info"><span className="au-spinner" aria-hidden="true" /></div>
+          <h1 className="au-title">Checking your link</h1>
+          <p className="au-subtitle">This only takes a moment.</p>
+        </div>
+      )}
 
-      {/* Background orbs */}
-      <div style={{
-        position: "absolute", top: -200, right: -200,
-        width: 500, height: 500, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(255,192,5,0.07) 0%, transparent 65%)",
-        pointerEvents: "none",
-      }} />
-      <div style={{
-        position: "absolute", bottom: -150, left: -150,
-        width: 400, height: 400, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(26,58,122,0.6) 0%, transparent 65%)",
-        pointerEvents: "none",
-      }} />
-
-      {/* Gold top accent */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, height: 3,
-        background: "linear-gradient(90deg, transparent, var(--gold), transparent)",
-      }} />
-
-      <div style={{
-        width: "100%", maxWidth: 420,
-        position: "relative", zIndex: 10,
-      }} className="fade-up">
-
-        {/* Logo */}
-        <div style={{
-          textAlign: "center", marginBottom: 32,
-        }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: "50%",
-            background: "rgba(255,192,5,0.08)",
-            border: "1.5px solid rgba(255,192,5,0.2)",
-            display: "flex", alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 16px",
-            padding: 12, overflow: "hidden",
-          }}>
-            <img
-              src="/upsa-logo.png" alt="UPSA"
-              style={{
-                width: "100%", height: "100%",
-                objectFit: "contain",
-                filter: "brightness(1.15)",
-              }}
-              onError={(e) => { e.target.style.display = "none"; }}
-            />
+      {status === "invalid" && (
+        <div className="au-state">
+          <div className="au-state-icon error"><Icon name="alert" size={28} strokeWidth={1.8} /></div>
+          <h1 className="au-title">This link cannot be used</h1>
+          <p className="au-subtitle">{invalidReason} Reset links work once and expire after one hour.</p>
+          <div className="au-state-actions">
+            <Link to="/forgot-password" className="au-submit" style={{ textDecoration: "none" }}>Request a new link</Link>
+            <Link to="/login" className="au-secondary">Back to sign in</Link>
           </div>
-          <p style={{
-            fontFamily: "var(--font-heading)",
-            fontWeight: 800, fontSize: 14,
-            color: "var(--gold)",
-          }}>
-            GradeIQ UPSA
-          </p>
         </div>
+      )}
 
-        {/* Card */}
-        <div style={{
-          background: "var(--bg-card)",
-          borderRadius: "var(--radius-xl)",
-          padding: "40px 36px",
-          boxShadow: `
-            0 0 0 1px rgba(8,28,70,0.06),
-            0 4px 6px rgba(8,28,70,0.04),
-            0 20px 60px rgba(8,28,70,0.15)
-          `,
-        }}>
-
-          {/* Top accent */}
-          <div style={{
-            width: 40, height: 3,
-            background: "linear-gradient(90deg, var(--navy), var(--gold))",
-            borderRadius: 999, marginBottom: 28,
-          }} />
-
-          {/* VERIFYING */}
-          {verifying && (
-            <div style={{
-              textAlign: "center", padding: "40px 0",
-            }}>
-              <div className="spinner spinner-dark spinner-lg"
-                style={{ margin: "0 auto 16px" }}
-              />
-              <p style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 600, fontSize: 14,
-                color: "var(--navy)",
-              }}>
-                Verifying your reset link...
-              </p>
-            </div>
-          )}
-
-          {/* INVALID TOKEN */}
-          {!verifying && !tokenValid && (
-            <div style={{ textAlign: "center" }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: "50%",
-                background: "var(--red-bg)",
-                border: "2px solid var(--red-border)",
-                display: "flex", alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 20px", fontSize: 28,
-              }}>
-                ❌
-              </div>
-              <h2 style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 800, fontSize: 22,
-                color: "var(--navy)", marginBottom: 12,
-              }}>
-                Invalid Reset Link
-              </h2>
-              <p style={{
-                color: "var(--text-muted)",
-                fontSize: 14, lineHeight: 1.7,
-                marginBottom: 28,
-              }}>
-                {error}
-              </p>
-              <Link
-                to="/forgot-password"
-                className="btn btn-primary btn-lg btn-full"
-                style={{ marginBottom: 12 }}
-              >
-                Request New Reset Link
-              </Link>
-              <Link
-                to="/login"
-                className="btn btn-outline btn-full"
-              >
-                ← Back to Login
-              </Link>
-            </div>
-          )}
-
-          {/* SUCCESS */}
-          {!verifying && success && (
-            <div style={{ textAlign: "center" }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: "50%",
-                background: "var(--green-bg)",
-                border: "2px solid var(--green-border)",
-                display: "flex", alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 20px", fontSize: 28,
-              }}>
-                
-              </div>
-              <h2 style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 800, fontSize: 22,
-                color: "var(--navy)", marginBottom: 12,
-              }}>
-                Password Reset! 
-              </h2>
-              <p style={{
-                color: "var(--text-muted)",
-                fontSize: 14, lineHeight: 1.7,
-                marginBottom: 28,
-              }}>
-                Your password has been updated successfully.
-                Redirecting you to login in 3 seconds...
-              </p>
-              <Link
-                to="/login"
-                className="btn btn-primary btn-lg btn-full"
-              >
-                Sign In Now →
-              </Link>
-            </div>
-          )}
-
-          {/* RESET FORM */}
-          {!verifying && tokenValid && !success && (
-            <>
-              <h2 style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 800, fontSize: 24,
-                color: "var(--navy)", marginBottom: 8,
-                letterSpacing: "-0.02em",
-              }}>
-                Set New Password 
-              </h2>
-              <p style={{
-                color: "var(--text-muted)",
-                fontSize: 14, marginBottom: 28,
-                lineHeight: 1.6,
-              }}>
-                Choose a strong password for your GradeIQ UPSA account.
-              </p>
-
-              {error && (
-                <div className="alert alert-red" style={{ marginBottom: 20 }}>
-                  <span>⚠️</span>{error}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit}>
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 16, marginBottom: 24,
-                }}>
-                  <div className="form-group">
-                    <label className="form-label">New Password</label>
-                    <input
-                      type="password"
-                      placeholder="Min. 8 characters"
-                      value={form.password}
-                      onChange={(e) => {
-                        setForm({ ...form, password: e.target.value });
-                        setError("");
-                      }}
-                      required
-                      className="form-input"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Confirm New Password</label>
-                    <input
-                      type="password"
-                      placeholder="Re-enter your new password"
-                      value={form.confirm_password}
-                      onChange={(e) => {
-                        setForm({ ...form, confirm_password: e.target.value });
-                        setError("");
-                      }}
-                      required
-                      className="form-input"
-                    />
-                  </div>
-
-                  {/* Password strength indicator */}
-                  {form.password && (
-                    <div>
-                      <div style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: 6,
-                      }}>
-                        <span style={{
-                          fontSize: 11,
-                          fontFamily: "var(--font-heading)",
-                          fontWeight: 600,
-                          color: "var(--text-muted)",
-                        }}>
-                          Password strength
-                        </span>
-                        <span style={{
-                          fontSize: 11,
-                          fontFamily: "var(--font-heading)",
-                          fontWeight: 700,
-                          color: form.password.length >= 10 ? "var(--green)"
-                            : form.password.length >= 6 ? "var(--amber)"
-                            : "var(--red)",
-                        }}>
-                          {form.password.length >= 10 ? "Strong"
-                            : form.password.length >= 6 ? "Good"
-                            : "Too short"}
-                        </span>
-                      </div>
-                      <div className="progress-track">
-                        <div
-                          className="progress-fill"
-                          style={{
-                            width: `${Math.min((form.password.length / 12) * 100, 100)}%`,
-                            background: form.password.length >= 10
-                              ? "var(--green)"
-                              : form.password.length >= 6
-                              ? "#F59E0B"
-                              : "var(--red)",
-                            transition: "width 0.3s ease",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Match indicator */}
-                  {form.confirm_password && (
-                    <div className={`alert ${form.password === form.confirm_password
-                      ? "alert-green" : "alert-red"}`}
-                    >
-                      <span>
-                        {form.password === form.confirm_password ? "✅" : "❌"}
-                      </span>
-                      {form.password === form.confirm_password
-                        ? "Passwords match"
-                        : "Passwords do not match"}
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn btn-primary btn-lg btn-full"
-                >
-                  {loading ? (
-                    <><span className="spinner" />Resetting password...</>
-                  ) : "Reset Password →"}
-                </button>
-              </form>
-            </>
-          )}
-
+      {status === "done" && (
+        <div className="au-state" role="status">
+          <div className="au-state-icon success"><Icon name="check" size={30} strokeWidth={2.4} /></div>
+          <h1 className="au-title">Password changed</h1>
+          <p className="au-subtitle">You can now sign in with your new password. Taking you to sign in...</p>
+          <Link to="/login" className="au-submit" style={{ textDecoration: "none" }}>Sign in now</Link>
+          <div className="au-countdown" aria-hidden="true"><span /></div>
         </div>
+      )}
 
-        <p style={{
-          textAlign: "center",
-          fontSize: 11, color: "rgba(255,255,255,0.2)",
-          marginTop: 20, lineHeight: 1.7,
-          fontFamily: "var(--font-heading)",
-        }}>
-          University of Professional Studies, Accra
-          <br />
-          © 2026 GradeIQ UPSA · Developed by Ahenkora Joshua Owusu
-        </p>
+      {status === "ready" && (
+        <>
+          <p className="au-eyebrow">Reset password</p>
+          <h1 className="au-title">Choose a new password</h1>
+          <p className="au-subtitle">It must be different from your current password.</p>
 
-      </div>
-
-    </div>
+          <form className="au-form" onSubmit={handleSubmit} noValidate>
+            {error && <Alert>{error}</Alert>}
+            <PasswordField id="password" label="New password" autoComplete="new-password"
+              value={form.password} onChange={onInput} error={errors.password} />
+            <PasswordStrength checks={passwordChecks(form.password)} score={passwordScore(form.password)} />
+            <PasswordField id="confirm" label="Confirm new password" autoComplete="new-password"
+              value={form.confirm} onChange={onInput} error={errors.confirm} />
+            <button type="submit" className="au-submit" disabled={loading}>
+              {loading && <span className="au-spinner" aria-hidden="true" />}
+              {loading ? "Saving..." : "Save new password"}
+            </button>
+          </form>
+        </>
+      )}
+    </AuthLayout>
   );
 }
