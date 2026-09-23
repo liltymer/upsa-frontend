@@ -374,6 +374,50 @@
 .au-stepnav-item.current .au-stepnav-num { background: var(--navy); border-color: var(--navy); color: #fff; }
 .au-stepnav-item button:not(:disabled):hover { color: var(--navy); }
 
+/* ---------- Result states (email sent, link expired, password changed) ---------- */
+
+.au-state { text-align: center; }
+.au-state-icon {
+  width: 64px;
+  height: 64px;
+  margin: 4px auto 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.au-state-icon.success { background: #ecfdf3; color: #17b26a; box-shadow: 0 0 0 8px rgba(23, 178, 106, 0.08); }
+.au-state-icon.info { background: rgba(255, 192, 5, 0.14); color: var(--navy); box-shadow: 0 0 0 8px rgba(255, 192, 5, 0.08); }
+.au-state-icon.error { background: #fef3f2; color: var(--au-error); box-shadow: 0 0 0 8px rgba(217, 45, 32, 0.06); }
+.au-state .au-title,
+.au-state .au-subtitle { text-align: center; }
+.au-state .au-subtitle strong { color: var(--au-ink); overflow-wrap: anywhere; }
+.au-state-actions { display: grid; gap: 10px; margin-top: 4px; }
+.au-tips { list-style: none; margin: 0 0 20px; padding: 16px 18px; border-radius: 12px; background: var(--au-soft); text-align: left; display: grid; gap: 8px; }
+.au-tips li { display: flex; gap: 10px; font-size: 14px; line-height: 1.5; color: var(--au-body); }
+.au-tips svg { flex-shrink: 0; color: var(--gold-deep); margin-top: 2px; }
+.au-linkbutton {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy-mid);
+  cursor: pointer;
+}
+.au-linkbutton:disabled { color: var(--au-muted); cursor: default; font-weight: 600; }
+.au-linkbutton:not(:disabled):hover { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 4px; }
+.au-countdown {
+  height: 4px;
+  margin-top: 16px;
+  border-radius: 999px;
+  background: var(--au-line);
+  overflow: hidden;
+}
+.au-countdown span { display: block; height: 100%; background: var(--gold); animation: au-countdown 3s linear forwards; }
+@keyframes au-countdown { from { width: 0; } to { width: 100%; } }
+
 .au-alert {
   display: flex;
   gap: 10px;
