@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { simulateCGPA, getTargetGrade, getErrorMessage } from "../services/api";
+import { useProgrammes } from "../context/ProgrammeContext";
+import useReferenceData from "../hooks/useReferenceData";
+import { classStyle, classifyWithBands } from "../utils/academic";
 
 const GRADE_OPTIONS = [
   { label: "A — 4.0", value: 4.0 }, { label: "B+ — 3.5", value: 3.5 },
@@ -9,11 +12,6 @@ const GRADE_OPTIONS = [
   { label: "F — 0.0", value: 0.0 },
 ];
 
-const QUICK_TARGETS = [
-  { label: "First Class", value: "3.6", color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)" },
-  { label: "2nd Upper", value: "3.0", color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)" },
-  { label: "2nd Lower", value: "2.5", color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)" },
-];
 
 const IconSimulator = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -67,6 +65,13 @@ const IconX = () => (
 );
 
 export default function Simulator() {
+  const { current } = useProgrammes();
+  const { classification_bands: allBands } = useReferenceData();
+  // The simulator works on the current programme — diploma and degree have different targets
+  const bands = allBands[current?.award_type || "degree"] || [];
+  const QUICK_TARGETS = bands
+    .filter((b) => b.min >= 2.5)
+    .map((b) => ({ ...classStyle(b.label), label: b.label, value: String(b.min) }));
   const [courses, setCourses] = useState([{ id: 1, credit_hours: 3, grade_point: 4.0 }]);
   const [simResult, setSimResult] = useState(null);
   const [simLoading, setSimLoading] = useState(false);
@@ -104,14 +109,7 @@ export default function Simulator() {
     finally { setTargetLoading(false); }
   };
 
-  const getSimResultStyle = (cgpa) => {
-    if (cgpa >= 3.6) return { label: "First Class", color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)" };
-    if (cgpa >= 3.0) return { label: "Second Class Upper", color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)" };
-    if (cgpa >= 2.5) return { label: "Second Class Lower", color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)" };
-    if (cgpa >= 2.0) return { label: "Third Class", color: "var(--orange)", bg: "var(--orange-bg)", border: "var(--orange-border)" };
-    if (cgpa >= 1.0) return { label: "Pass", color: "var(--text-muted)", bg: "#F9FAFB", border: "var(--border)" };
-    return { label: "Fail", color: "var(--red)", bg: "var(--red-bg)", border: "var(--red-border)" };
-  };
+  const getSimResultStyle = (cgpa) => classStyle(simResult?.projected_classification || classifyWithBands(cgpa, bands));
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-page)", fontFamily: "var(--font-body)" }}>
