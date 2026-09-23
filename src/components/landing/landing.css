@@ -223,20 +223,15 @@
 /* ---------- Hero ---------- */
 
 .lp-hero {
-  position: relative;
   background: var(--navy);
   color: #fff;
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  min-height: min(calc(100vh - var(--lp-nav-h)), 760px);
+  padding: clamp(40px, 6vh, 80px) 0 clamp(48px, 7vh, 88px);
 }
-.lp-hero-copy {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: clamp(48px, 7vw, 96px) clamp(24px, 5vw, 64px) clamp(48px, 7vw, 96px) max(var(--lp-gutter), calc((100vw - var(--lp-max)) / 2 + var(--lp-gutter)));
-  position: relative;
-  z-index: 2;
+.lp-hero-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  gap: clamp(32px, 5vw, 72px);
+  align-items: center;
 }
 .lp-hero-eyebrow {
   display: flex;
@@ -246,7 +241,7 @@
   font-weight: 600;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 22px;
+  margin: 0 0 18px;
 }
 .lp-hero-eyebrow::before {
   content: "";
@@ -259,21 +254,21 @@
 .lp-hero h1 {
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: clamp(32px, 3.9vw, 50px);
+  font-size: clamp(30px, 3.3vw, 48px);
   line-height: 1.12;
   letter-spacing: -0.025em;
-  margin: 0 0 20px;
-  max-width: 660px;
+  margin: 0 0 18px;
+  max-width: 640px;
 }
 .lp-hero h1 em { font-style: normal; color: var(--gold); }
 .lp-hero-body {
-  font-size: clamp(16px, 1.35vw, 18px);
-  line-height: 1.7;
+  font-size: clamp(16px, 1.2vw, 18px);
+  line-height: 1.65;
   color: rgba(255, 255, 255, 0.8);
-  max-width: 540px;
-  margin: 0 0 32px;
+  max-width: 600px;
+  margin: 0 0 28px;
 }
-.lp-hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px; }
+.lp-hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 26px; }
 .lp-hero-proof {
   display: flex;
   gap: 10px;
@@ -281,28 +276,25 @@
   font-size: 14px;
   line-height: 1.55;
   color: rgba(255, 255, 255, 0.72);
-  max-width: 500px;
-  padding-top: 24px;
+  max-width: 540px;
+  margin: 0;
+  padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 .lp-hero-proof svg { color: var(--gold); flex-shrink: 0; margin-top: 2px; }
 
 /* Framed campus photo: shown whole, in its own landscape ratio */
-.lp-hero-media {
-  display: flex;
-  align-items: center;
-  padding: clamp(40px, 5vw, 72px) max(var(--lp-gutter), calc((100vw - var(--lp-max)) / 2 + var(--lp-gutter))) clamp(40px, 5vw, 72px) 0;
-}
+.lp-hero-media { display: flex; justify-content: flex-end; }
 .lp-hero-frame {
   position: relative;
   width: 100%;
-  margin: 0;
+  max-width: 560px;
+  margin: 0 16px 16px 0; /* room for the gold accent inside the page margin */
 }
-/* Gold accent block offset behind the photo */
 .lp-hero-frame::before {
   content: "";
   position: absolute;
-  inset: 18px -18px -18px 18px;
+  inset: 16px -16px -16px 16px;
   border-radius: 20px;
   border: 2px solid var(--gold);
   opacity: 0.85;
@@ -320,6 +312,17 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Short or zoomed desktop screens: keep the whole hero above the fold */
+@media (min-width: 861px) and (max-height: 780px) {
+  .lp-hero { padding: 32px 0 44px; }
+  .lp-hero h1 { font-size: clamp(28px, 2.9vw, 40px); margin-bottom: 14px; }
+  .lp-hero-eyebrow { margin-bottom: 14px; }
+  .lp-hero-body { font-size: 16px; margin-bottom: 22px; }
+  .lp-hero-ctas { margin-bottom: 20px; }
+  .lp-hero-proof { padding-top: 16px; }
+  .lp-hero-frame { max-width: 480px; }
 }
 
 /* ---------- Facts strip ---------- */
@@ -691,9 +694,10 @@
   .lp-mobile-menu.open { display: block; }
 
   /* Photo becomes the hero background on small screens */
-  .lp-hero { grid-template-columns: 1fr; min-height: 0; }
-  .lp-hero-copy { padding: 56px var(--lp-gutter) 8px; }
-  .lp-hero-media { padding: 32px calc(var(--lp-gutter) + 12px) 56px var(--lp-gutter); }
+  .lp-hero { padding: 48px 0 56px; }
+  .lp-hero-inner { grid-template-columns: 1fr; gap: 40px; }
+  .lp-hero-media { justify-content: flex-start; }
+  .lp-hero-frame { max-width: none; margin: 0 12px 12px 0; }
   .lp-hero-frame::before { inset: 12px -12px -12px 12px; border-radius: 16px; }
   .lp-hero-photo { border-radius: 16px; }
   /* sideways reveals become upward on small screens */
