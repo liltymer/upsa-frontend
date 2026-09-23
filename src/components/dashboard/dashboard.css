@@ -399,6 +399,24 @@
 .db-area-form input { flex: 1; min-width: 140px; width: auto; }
 .db-target-credits label { font-size: 14px; font-weight: 600; color: var(--db-ink); width: 100%; }
 
+/* ---------- Where you are ---------- */
+
+.db-stage { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; align-items: center; }
+.db-stage-main { display: flex; gap: 16px; align-items: flex-start; }
+.db-stage-icon { width: 46px; height: 46px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(255, 192, 5, 0.16); color: var(--navy); }
+.db-stage .db-label { margin-bottom: 4px; }
+.db-stage-sub { margin: 4px 0 0; font-size: 13px; color: var(--db-muted); }
+.db-stage-progress { max-width: 320px; margin: 10px 0 12px; }
+.db-stage-msg { margin: 0 0 6px; font-size: 15px; line-height: 1.6; color: var(--db-body); }
+.db-stage-range { padding: 16px 18px; border-radius: 14px; background: var(--db-soft); border: 1px solid var(--db-line); }
+.db-range-row { display: flex; align-items: center; gap: 10px; }
+.db-range-cell { flex: 1; display: grid; gap: 2px; padding: 12px; border-radius: 10px; background: #fff; border: 1px solid var(--db-line); text-align: center; }
+.db-range-cell small { font-size: 12px; color: var(--db-muted); font-weight: 600; }
+.db-range-cell strong { font-family: var(--font-heading); font-weight: 800; font-size: 24px; color: var(--navy); }
+.db-range-cell span { font-size: 12px; font-weight: 700; color: var(--db-body); }
+.db-range-best { border-color: var(--gold); box-shadow: inset 0 3px 0 var(--gold); }
+.db-range-to { font-size: 13px; color: var(--db-muted); }
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1100px) {
@@ -406,6 +424,7 @@
 }
 @media (max-width: 1100px) {
   .db-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .db-stage { grid-template-columns: 1fr; }
 }
 @media (max-width: 720px) {
   .db-grid { grid-template-columns: 1fr; }

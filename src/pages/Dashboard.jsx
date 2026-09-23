@@ -67,6 +67,50 @@ function BandMeter({ summary }) {
   );
 }
 
+const STAGE_ICONS = { not_started: "results", top_up_start: "layers", early: "chart", middle: "chart", final: "target", complete: "check", completed_programme: "check" };
+
+/** Where the student is in the programme and what it means for them. */
+function StageCard({ stage }) {
+  if (!stage?.key) return null;
+  const range = stage.finish || stage.next_semester;
+  return (
+    <section className="db-card db-stage" aria-labelledby="db-stage-title">
+      <div className="db-stage-main">
+        <span className="db-stage-icon"><Icon name={STAGE_ICONS[stage.key] || "chart"} size={22} /></span>
+        <div>
+          <p className="db-label">Where you are</p>
+          <h2 id="db-stage-title" className="db-h2">{stage.title}</h2>
+          <p className="db-stage-sub">{stage.label}</p>
+          <div className="db-progress db-stage-progress" aria-hidden="true">
+            {Array.from({ length: stage.total_semesters }, (_, i) => (
+              <span key={i} className={i < stage.semesters_done ? "on" : ""} />
+            ))}
+          </div>
+          {stage.messages.map((m) => <p key={m} className="db-stage-msg">{m}</p>)}
+        </div>
+      </div>
+      {range && (
+        <div className="db-stage-range" aria-label={stage.finish ? "Where you can finish" : "Where your CGPA can go next semester"}>
+          <p className="db-label">{stage.finish ? `Where you can finish (${stage.finish.remaining_credits} credits left)` : "Next semester could leave you at"}</p>
+          <div className="db-range-row">
+            <div className="db-range-cell">
+              <small>Averaging C</small>
+              <strong>{range.with_c.toFixed(2)}</strong>
+              <span>{range.with_c_class}</span>
+            </div>
+            <span className="db-range-to" aria-hidden="true">to</span>
+            <div className="db-range-cell db-range-best">
+              <small>Straight A's</small>
+              <strong>{range.best.toFixed(2)}</strong>
+              <span>{range.best_class}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function Checklist({ items, onDismiss }) {
   const done = items.filter((i) => i.done).length;
   return (
@@ -278,6 +322,8 @@ export default function Dashboard() {
         <Checklist items={checklist} onDismiss={() => { storageSet(checklistKey, "1"); setChecklistHidden(true); }} />
       )}
 
+      {!insights.has_results && <StageCard stage={insights.stage} />}
+
       {!insights.has_results ? (
         <section className="db-card db-empty">
           <div className="db-empty-icon"><Icon name="results" size={30} /></div>
@@ -308,6 +354,8 @@ export default function Dashboard() {
               <BandMeter summary={s} />
             </div>
           </section>
+
+          <StageCard stage={insights.stage} />
 
           {/* ---------- Tabs ---------- */}
           <div className="db-tabs" role="tablist" aria-label="Dashboard sections">
