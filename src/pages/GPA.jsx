@@ -103,6 +103,11 @@ export default function GPA() {
 
   const getBarColor = (gpa) => getClassStyle(gpa).bar;
 
+  // Chart guide lines: the top three bands of this programme (degree: 3.6 / 3.0 / 2.5, diploma: 3.6 / 2.5)
+  const chartBands = bands
+    .filter((b) => b.min >= 2.5)
+    .map((b) => ({ label: b.label, min: b.min, color: styleForClass(b.label).bar }));
+
   const classStyle = getClassStyle(cgpa ?? 0);
   const trendStyle = getTrendStyle(trends?.trend);
   const gpas = history.map((h) => h.gpa);
@@ -192,7 +197,7 @@ export default function GPA() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
               <h3 className="section-title" style={{ marginBottom: 0 }}>GPA Trend Chart</h3>
               <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
-                {[{ label: "First Class", color: "#22C55E" }, { label: "2nd Upper", color: "#3B82F6" }, { label: "2nd Lower", color: "#F59E0B" }].map((l) => (
+                {chartBands.map((l) => (
                   <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.color }} />
                     <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "var(--font-heading)", fontWeight: 500 }}>{l.label}</span>
@@ -214,9 +219,9 @@ export default function GPA() {
                   <XAxis dataKey="name" tick={{ fontFamily: "var(--font-heading)", fontSize: 12, fill: "#9CA3AF", fontWeight: 600 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[minGpa, 4]} ticks={[1, 2, 2.5, 3, 3.6, 4].filter((t) => t >= minGpa)} tick={{ fontFamily: "var(--font-heading)", fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <ReferenceLine y={3.6} stroke="#22C55E" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: "3.6", fill: "#22C55E", fontSize: 10, fontWeight: 700 }} />
-                  <ReferenceLine y={3.0} stroke="#3B82F6" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: "3.0", fill: "#3B82F6", fontSize: 10, fontWeight: 700 }} />
-                  <ReferenceLine y={2.5} stroke="#F59E0B" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: "2.5", fill: "#F59E0B", fontSize: 10, fontWeight: 700 }} />
+                  {chartBands.map((b) => (
+                    <ReferenceLine key={b.label} y={b.min} stroke={b.color} strokeDasharray="4 4" strokeWidth={1.5} label={{ value: String(b.min), fill: b.color, fontSize: 10, fontWeight: 700 }} />
+                  ))}
                   <Area type="monotone" dataKey="gpa" stroke="#FFC005" strokeWidth={3} fill="url(#gpaGrad)" dot={{ fill: "var(--navy)", stroke: "#FFC005", strokeWidth: 2, r: 5 }} activeDot={{ fill: "#FFC005", stroke: "var(--navy)", strokeWidth: 2, r: 7 }} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -241,7 +246,7 @@ export default function GPA() {
                     <div key={i} style={{ padding: "14px 16px", background: "var(--bg-page)", borderRadius: "var(--radius-md)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                         <div>
-                          <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 13, color: "var(--navy)" }}>Year {item.year} — Sem {item.semester}</p>
+                          <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 13, color: "var(--navy)" }}>{semesterTitle(item.academic_year, item.semester)}</p>
                           <p style={{ fontSize: 11, color: cls.color, fontFamily: "var(--font-heading)", fontWeight: 600, marginTop: 2 }}>{cls.label}</p>
                         </div>
                         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 20, color: barColor }}>{item.gpa.toFixed(2)}</span>
