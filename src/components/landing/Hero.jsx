@@ -25,16 +25,20 @@ export default function Hero() {
       </div>
 
       <div className="lp-hero-media">
-        <img
-          src={campus1400}
-          srcSet={`${campus800} 800w, ${campus1400} 1400w`}
-          sizes="(max-width: 860px) 100vw, 50vw"
-          width="1400"
-          height="1197"
-          alt="Campus buildings at the University of Professional Studies, Accra"
-          fetchPriority="high"
-          decoding="async"
-        />
+        <figure className="lp-hero-frame">
+          <div className="lp-hero-photo">
+            <img
+              src={campus1400}
+              srcSet={`${campus800} 800w, ${campus1400} 1330w`}
+              sizes="(max-width: 860px) 92vw, 46vw"
+              width="1330"
+              height="900"
+              alt="Campus buildings at the University of Professional Studies, Accra"
+              fetchPriority="high"
+              decoding="async"
+            />
+          </div>
+        </figure>
       </div>
     </section>
   );

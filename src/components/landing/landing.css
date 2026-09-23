@@ -287,22 +287,39 @@
 }
 .lp-hero-proof svg { color: var(--gold); flex-shrink: 0; margin-top: 2px; }
 
-.lp-hero-media { position: relative; overflow: hidden; }
-.lp-hero-media img {
+/* Framed campus photo: shown whole, in its own landscape ratio */
+.lp-hero-media {
+  display: flex;
+  align-items: center;
+  padding: clamp(40px, 5vw, 72px) max(var(--lp-gutter), calc((100vw - var(--lp-max)) / 2 + var(--lp-gutter))) clamp(40px, 5vw, 72px) 0;
+}
+.lp-hero-frame {
+  position: relative;
+  width: 100%;
+  margin: 0;
+}
+/* Gold accent block offset behind the photo */
+.lp-hero-frame::before {
+  content: "";
   position: absolute;
-  inset: 0;
+  inset: 18px -18px -18px 18px;
+  border-radius: 20px;
+  border: 2px solid var(--gold);
+  opacity: 0.85;
+}
+.lp-hero-photo {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(2, 8, 24, 0.45);
+  aspect-ratio: 1330 / 900;
+  background: var(--navy-light);
+}
+.lp-hero-photo img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 72% 55%;
-}
-/* Blend the photo into the navy text panel */
-.lp-hero-media::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: linear-gradient(90deg, var(--navy) 0%, rgba(8, 28, 70, 0.55) 18%, rgba(8, 28, 70, 0) 45%);
 }
 
 /* ---------- Facts strip ---------- */
@@ -675,9 +692,14 @@
 
   /* Photo becomes the hero background on small screens */
   .lp-hero { grid-template-columns: 1fr; min-height: 0; }
-  .lp-hero-media { position: absolute; inset: 0; }
-  .lp-hero-media::before { background: linear-gradient(180deg, rgba(8, 28, 70, 0.78) 0%, rgba(8, 28, 70, 0.92) 55%, var(--navy) 100%); }
-  .lp-hero-copy { padding: 64px var(--lp-gutter) 56px; }
+  .lp-hero-copy { padding: 56px var(--lp-gutter) 8px; }
+  .lp-hero-media { padding: 32px calc(var(--lp-gutter) + 12px) 56px var(--lp-gutter); }
+  .lp-hero-frame::before { inset: 12px -12px -12px 12px; border-radius: 16px; }
+  .lp-hero-photo { border-radius: 16px; }
+  /* sideways reveals become upward on small screens */
+  .lp.lp-js [data-reveal="left"],
+  .lp.lp-js [data-reveal="right"] { transform: translateY(28px); }
+  .lp.lp-js [data-reveal].is-visible { transform: none; }
 
   .lp-steps,
   .lp-support-grid { grid-template-columns: 1fr; }
@@ -732,7 +754,8 @@
 .lp-hero-copy > :nth-child(3) { animation-delay: 0.3s; }
 .lp-hero-copy > :nth-child(4) { animation-delay: 0.42s; }
 .lp-hero-copy > :nth-child(5) { animation-delay: 0.55s; }
-.lp-hero-media img { animation: lp-photo-in 1.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.lp-hero-photo img { animation: lp-photo-in 1.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.lp-hero-frame { animation: lp-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
 
 /* Scroll reveal */
 .lp-js [data-reveal] {
