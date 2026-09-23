@@ -229,8 +229,8 @@
 }
 .lp-hero-inner {
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-  gap: clamp(32px, 5vw, 72px);
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: clamp(32px, 4vw, 56px);
   align-items: center;
 }
 .lp-hero-eyebrow {
@@ -288,7 +288,7 @@
 .lp-hero-frame {
   position: relative;
   width: 100%;
-  max-width: 560px;
+  max-width: 660px;
   margin: 0 16px 16px 0; /* room for the gold accent inside the page margin */
 }
 .lp-hero-frame::before {
@@ -322,7 +322,8 @@
   .lp-hero-body { font-size: 16px; margin-bottom: 22px; }
   .lp-hero-ctas { margin-bottom: 20px; }
   .lp-hero-proof { padding-top: 16px; }
-  .lp-hero-frame { max-width: 480px; }
+  .lp-hero-inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .lp-hero-frame { max-width: 600px; }
 }
 
 /* ---------- Facts strip ---------- */
