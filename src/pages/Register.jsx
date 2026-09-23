@@ -5,28 +5,41 @@ import { registerStudent } from "../services/api";
 import { authErrorMessage, homeFor, startSession } from "../services/session";
 import useReferenceData from "../hooks/useReferenceData";
 import AuthLayout from "../components/auth/AuthLayout";
-import { Alert, PasswordField, SelectField, TextField } from "../components/auth/fields";
+import { Alert, ComboField, PasswordField, SelectField, TextField } from "../components/auth/fields";
 
 const LEVELS = [100, 200, 300, 400];
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const YEAR_PATTERN = /^(\d{4})\/(\d{4})$/;
+
+// "2024/2025" style, second year following the first
+const isAcademicYear = (value) => {
+  const match = YEAR_PATTERN.exec(value.trim());
+  return Boolean(match) && Number(match[2]) === Number(match[1]) + 1;
+};
+const isDiplomaName = (name) => name.toLowerCase().includes("diploma");
 const SLOW_AFTER_MS = 5000;
 
 const STEPS = [
   { title: "About you", subtitle: "Your name and the details you will sign in with." },
-  { title: "Your programme", subtitle: "The UPSA programme you are on now." },
+  { title: "Your programme", subtitle: "The UPSA programme you are on now. Pick from the lists or type your own." },
   { title: "Your diploma", subtitle: "Optional. Record the diploma you completed before your top-up." },
 ];
 
 const EMPTY = {
   name: "", email: "", password: "", confirm: "",
-  is_top_up: false, programme: "", level: "", academic_year: "", index_number: "",
+  is_top_up: false, entry_level: "300", programme: "", level: "", academic_year: "", index_number: "",
   prev_programme: "", prev_index_number: "", prev_start_year: "",
 };
 
 export default function Register() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { programmes, academic_years: academicYears, current_academic_year: currentYear } = useReferenceData();
+  const {
+    programmes,
+    academic_years: academicYears,
+    current_academic_year: currentYear,
+    top_up_entry_levels: topUpEntryLevels = [200, 300],
+  } = useReferenceData();
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(EMPTY);
@@ -46,27 +59,31 @@ export default function Register() {
     headingRef.current?.focus();
   }, [step]);
 
-  const academicYear = form.academic_year || currentYear || "";
+  const academicYear = form.academic_year === null ? "" : (form.academic_year || currentYear || "");
   const totalSteps = form.is_top_up ? 3 : 2;
-  const isDiploma = form.programme.toLowerCase().startsWith("diploma");
+  const isDiploma = isDiplomaName(form.programme);
+  const entryLevel = form.is_top_up ? Number(form.entry_level) : 100;
   const programmeOptions = programmes
     .filter((p) => !form.is_top_up || p.award_type === "degree")
     .map((p) => p.name);
   const diplomaOptions = programmes.filter((p) => p.award_type === "diploma").map((p) => p.name);
   const levelOptions = LEVELS
-    .filter((l) => (form.is_top_up ? l >= 300 : !isDiploma || l <= 200))
+    .filter((l) => l >= entryLevel && (!isDiploma || l <= 200))
     .map((l) => ({ value: String(l), label: `Level ${l}` }));
+  const entryOptions = topUpEntryLevels.map((l) => ({ value: String(l), label: `Level ${l}` }));
 
   const update = (name, value) => {
     setForm((f) => {
       const next = { ...f, [name]: value };
       if (name === "is_top_up") {
-        next.level = value ? "300" : "";
-        if (value && next.programme.toLowerCase().startsWith("diploma")) next.programme = "";
+        next.level = value ? next.entry_level : "";
+        if (value && isDiplomaName(next.programme)) next.programme = "";
       }
-      if (name === "programme" && value.toLowerCase().startsWith("diploma") && Number(next.level) > 200) {
-        next.level = "";
-      }
+      // Current level can never be below the level the student joined at
+      if (name === "entry_level" && Number(next.level) < Number(value)) next.level = value;
+      if (name === "programme" && isDiplomaName(value) && Number(next.level) > 200) next.level = "";
+      // An emptied academic year stays empty instead of snapping back to the default
+      if (name === "academic_year" && value === "") next.academic_year = null;
       return next;
     });
     setErrors((e) => ({ ...e, [name]: "" }));
@@ -83,13 +100,16 @@ export default function Register() {
       if (form.confirm !== form.password) e.confirm = "The passwords do not match.";
     }
     if (index === 1) {
-      if (!form.programme) e.programme = "Choose your programme.";
+      if (form.programme.trim().length < 3) e.programme = "Choose or type your programme.";
+      else if (form.is_top_up && isDiploma) e.programme = "A top-up is to a degree. Choose your degree programme.";
       if (!form.level) e.level = "Choose your level.";
-      if (!academicYear) e.academic_year = "Choose the current academic year.";
+      if (!academicYear) e.academic_year = "Choose or type the current academic year.";
+      else if (!isAcademicYear(academicYear)) e.academic_year = "Use the format 2026/2027.";
       if (!form.index_number.trim()) e.index_number = "Enter your index number.";
     }
-    if (index === 2 && form.prev_programme) {
-      if (!form.prev_start_year) e.prev_start_year = "Choose the year your diploma started.";
+    if (index === 2 && form.prev_programme.trim()) {
+      if (!form.prev_start_year.trim()) e.prev_start_year = "Choose or type the year your diploma started.";
+      else if (!isAcademicYear(form.prev_start_year)) e.prev_start_year = "Use the format 2024/2025.";
       if (form.prev_index_number.trim() && form.prev_index_number.trim() === form.index_number.trim()) {
         e.prev_index_number = "Use a different index number from your degree.";
       }
@@ -109,16 +129,17 @@ export default function Register() {
         name: form.name.trim(),
         email: form.email.trim(),
         password: form.password,
-        programme: form.programme,
+        programme: form.programme.trim(),
         level: Number(form.level),
-        academic_year: academicYear,
+        academic_year: academicYear.trim(),
         index_number: form.index_number.trim(),
         is_top_up: form.is_top_up,
-        previous_programme: form.is_top_up && form.prev_programme
+        entry_level: form.is_top_up ? entryLevel : null,
+        previous_programme: form.is_top_up && form.prev_programme.trim()
           ? {
-              programme: form.prev_programme,
+              programme: form.prev_programme.trim(),
               index_number: form.prev_index_number.trim() || null,
-              start_academic_year: form.prev_start_year,
+              start_academic_year: form.prev_start_year.trim(),
             }
           : null,
       });
@@ -189,9 +210,9 @@ export default function Register() {
               placeholder="you@example.com" value={form.email} onChange={onInput} error={errors.email}
               hint="Password reset links are sent here." />
             <div className="au-row">
-              <PasswordField id="password" label="Password" autoComplete="new-password" placeholder="8 or more characters"
-                value={form.password} onChange={onInput} error={errors.password} />
-              <PasswordField id="confirm" label="Confirm password" autoComplete="new-password" placeholder="Type it again"
+              <PasswordField id="password" label="Password" autoComplete="new-password"
+                value={form.password} onChange={onInput} error={errors.password} hint="At least 8 characters." />
+              <PasswordField id="confirm" label="Confirm password" autoComplete="new-password"
                 value={form.confirm} onChange={onInput} error={errors.confirm} />
             </div>
           </>
@@ -204,7 +225,7 @@ export default function Register() {
               <div className="au-choice-options">
                 {[
                   { value: false, label: "No", note: "I started my programme at Level 100" },
-                  { value: true, label: "Yes", note: "I topped up from a UPSA diploma" },
+                  { value: true, label: "Yes", note: "I joined a degree after a diploma" },
                 ].map((opt) => (
                   <label key={opt.label} className={`au-choice-card${form.is_top_up === opt.value ? " selected" : ""}`}>
                     <input type="radio" name="is_top_up" checked={form.is_top_up === opt.value}
@@ -214,13 +235,20 @@ export default function Register() {
                 ))}
               </div>
             </fieldset>
-            <SelectField id="programme" label={form.is_top_up ? "Degree programme" : "Programme"} placeholder="Choose your programme"
-              options={programmeOptions} value={form.programme} onChange={onInput} error={errors.programme} />
+            <ComboField id="programme" label={form.is_top_up ? "Degree programme" : "Programme"}
+              placeholder="Start typing, e.g. Information Technology" options={programmeOptions}
+              value={form.programme} onChange={onInput} error={errors.programme}
+              hint="Pick from the UPSA list or type it exactly as on your admission letter." />
+            {form.is_top_up && (
+              <SelectField id="entry_level" label="Level you joined the degree at" options={entryOptions}
+                value={form.entry_level} onChange={onInput}
+                hint="Most top-up students join at Level 300. Some join at Level 200." />
+            )}
             <div className="au-row">
               <SelectField id="level" label="Current level" placeholder="Choose level" options={levelOptions}
                 value={form.level} onChange={onInput} error={errors.level} />
-              <SelectField id="academic_year" label="Academic year" placeholder="Choose year" options={academicYears}
-                value={academicYear} onChange={onInput} error={errors.academic_year} />
+              <ComboField id="academic_year" label="Academic year" placeholder="e.g. 2026/2027" options={academicYears}
+                value={academicYear} onChange={onInput} error={errors.academic_year} inputMode="numeric" />
             </div>
             <TextField id="index_number" label={form.is_top_up ? "Degree index number" : "Index number"}
               autoComplete="off" spellCheck="false" placeholder="e.g. 10324631"
@@ -231,13 +259,13 @@ export default function Register() {
 
         {step === 2 && (
           <>
-            <SelectField id="prev_programme" label="Diploma programme" placeholder="Choose your diploma (optional)"
+            <ComboField id="prev_programme" label="Diploma programme" placeholder="Pick or type your diploma (optional)"
               options={diplomaOptions} value={form.prev_programme} onChange={onInput} error={errors.prev_programme} />
             <div className="au-row">
               <TextField id="prev_index_number" label="Diploma index number" autoComplete="off" spellCheck="false"
                 placeholder="Optional" value={form.prev_index_number} onChange={onInput} error={errors.prev_index_number} />
-              <SelectField id="prev_start_year" label="Diploma started" placeholder="Choose year" options={academicYears}
-                value={form.prev_start_year} onChange={onInput} error={errors.prev_start_year} />
+              <ComboField id="prev_start_year" label="Diploma started" placeholder="e.g. 2024/2025" options={academicYears}
+                value={form.prev_start_year} onChange={onInput} error={errors.prev_start_year} inputMode="numeric" />
             </div>
             <Alert tone="info">Your diploma keeps its own CGPA and class. You can also add it later from your profile.</Alert>
           </>

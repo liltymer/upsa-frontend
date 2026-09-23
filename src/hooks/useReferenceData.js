@@ -6,12 +6,43 @@ import { getReferenceData } from "../services/api";
 let cache = null;
 let pending = null;
 
+// Academic years the way the API builds them (UPSA's year starts in August)
+function fallbackYears() {
+  const now = new Date();
+  const start = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  return Array.from({ length: 9 }, (_, i) => `${start - i}/${start - i + 1}`);
+}
+
 // Official UPSA scale, identical to the API's. Used until the API answers
 // (the free Render instance can take ~50s to wake) or if it is unreachable.
 const FALLBACK = {
-  programmes: [],
-  academic_years: [],
-  current_academic_year: "",
+  // Official UPSA list, same as the API's
+  programmes: [
+    { name: "Diploma in Accounting", award_type: "diploma" },
+    { name: "Diploma in Information Technology Management", award_type: "diploma" },
+    { name: "Diploma in Management", award_type: "diploma" },
+    { name: "Diploma in Marketing", award_type: "diploma" },
+    { name: "Diploma in Public Relations", award_type: "diploma" },
+    { name: "Bachelor of Arts in Applied French and Communications", award_type: "degree" },
+    { name: "Bachelor of Arts in Communication Studies", award_type: "degree" },
+    { name: "Bachelor of Arts in Public Relations Management", award_type: "degree" },
+    { name: "Bachelor of Business Administration", award_type: "degree" },
+    { name: "Bachelor of Laws (LLB)", award_type: "degree" },
+    { name: "Bachelor of Science in Accounting", award_type: "degree" },
+    { name: "Bachelor of Science in Accounting and Finance", award_type: "degree" },
+    { name: "Bachelor of Science in Actuarial Science", award_type: "degree" },
+    { name: "Bachelor of Science in Agribusiness and Finance", award_type: "degree" },
+    { name: "Bachelor of Science in Applied Marketing", award_type: "degree" },
+    { name: "Bachelor of Science in Applied Statistics", award_type: "degree" },
+    { name: "Bachelor of Science in Banking and Finance", award_type: "degree" },
+    { name: "Bachelor of Science in Business Economics", award_type: "degree" },
+    { name: "Bachelor of Science in Data Science and Analytics", award_type: "degree" },
+    { name: "Bachelor of Science in Information Technology", award_type: "degree" },
+    { name: "Bachelor of Science in Logistics and Transport Management", award_type: "degree" },
+    { name: "Bachelor of Science in Real Estate Management and Finance", award_type: "degree" },
+  ],
+  academic_years: fallbackYears(),
+  current_academic_year: fallbackYears()[0],
   grade_scale: [
     { grade: "A", marks: "80-100", interpretation: "Excellent", grade_point: 4.0 },
     { grade: "B+", marks: "75-79", interpretation: "Very Good", grade_point: 3.5 },
@@ -40,6 +71,7 @@ const FALLBACK = {
     ],
   },
   max_level: { diploma: 200, degree: 400 },
+  top_up_entry_levels: [200, 300],
 };
 
 export default function useReferenceData() {

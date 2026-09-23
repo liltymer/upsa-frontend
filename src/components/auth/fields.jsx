@@ -69,6 +69,30 @@ export function PasswordField({ id, label, error, hint, labelAside, ...inputProp
   );
 }
 
+// Text input with suggestions: students can pick from the list or type their own value
+export function ComboField({ id, label, error, hint, options, ...inputProps }) {
+  const listId = `${id}-options`;
+  return (
+    <div className="au-field">
+      <label className="au-label" htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        name={id}
+        list={listId}
+        className="au-input au-combo"
+        autoComplete="off"
+        aria-invalid={Boolean(error)}
+        aria-describedby={describedBy(id, error, hint)}
+        {...inputProps}
+      />
+      <datalist id={listId}>
+        {options.map((opt) => <option key={opt} value={opt} />)}
+      </datalist>
+      <FieldMessage id={id} error={error} hint={hint} />
+    </div>
+  );
+}
+
 export function SelectField({ id, label, error, hint, placeholder, options, ...selectProps }) {
   return (
     <div className="au-field">

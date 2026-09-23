@@ -162,7 +162,7 @@ export default function Profile() {
   const [busy, setBusy] = useState("");
   const [toast, setToast] = useState(null);
   const [panel, setPanel] = useState(""); // "topup" | "previous" | "link"
-  const [topUp, setTopUp] = useState({ index_number: "", programme: "", academic_year: "" });
+  const [topUp, setTopUp] = useState({ index_number: "", programme: "", academic_year: "", entry_level: "300" });
   const [previous, setPrevious] = useState({ index_number: "", programme: "", start_academic_year: "" });
   const [link, setLink] = useState({ email: "", password: "" });
 
@@ -221,8 +221,8 @@ export default function Profile() {
       `Start ${topUp.programme}? ${current?.programme || "Your current programme"} will be marked completed. ` +
       "Its results and CGPA are kept under Academic History."
     )) return;
-    const ok = await run("topup", () => startTopUp({ ...topUp, academic_year: topUp.academic_year || currentYear }), "Failed to start top-up.");
-    if (ok) setTopUp({ index_number: "", programme: "", academic_year: "" });
+    const ok = await run("topup", () => startTopUp({ ...topUp, entry_level: Number(topUp.entry_level), academic_year: topUp.academic_year || currentYear }), "Failed to start top-up.");
+    if (ok) setTopUp({ index_number: "", programme: "", academic_year: "", entry_level: "300" });
   };
 
   const submitPrevious = async (e) => {
@@ -328,7 +328,7 @@ export default function Profile() {
           {panel === "topup" && (
             <form onSubmit={submitTopUp} style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
               <p style={{ gridColumn: "1 / -1", fontSize: 13, color: "var(--text-secondary)" }}>
-                Enter your <strong>new</strong> index number. Your diploma will be marked completed and kept, with its own CGPA, under Academic History. Your degree starts at Level 300 with a fresh CGPA.
+                Enter your <strong>new</strong> index number. Your diploma will be marked completed and kept, with its own CGPA, under Academic History. Your degree starts at the level you joined (usually 300) with a fresh CGPA.
               </p>
               <div className="form-group">
                 <label className="form-label">New Index Number</label>
@@ -338,6 +338,13 @@ export default function Profile() {
                 <label className="form-label">Top-up Started</label>
                 <select className="form-input form-select" value={topUp.academic_year || currentYear} onChange={(e) => setTopUp({ ...topUp, academic_year: e.target.value })}>
                   {academicYears.map((y) => (<option key={y} value={y}>{y}</option>))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Joined the Degree at</label>
+                <select className="form-input form-select" value={topUp.entry_level} onChange={(e) => setTopUp({ ...topUp, entry_level: e.target.value })}>
+                  <option value="300">Level 300</option>
+                  <option value="200">Level 200</option>
                 </select>
               </div>
               <div className="form-group" style={{ gridColumn: "1 / -1" }}>
