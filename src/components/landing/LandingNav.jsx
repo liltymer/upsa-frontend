@@ -5,6 +5,14 @@ import { NAV_LINKS } from "./content";
 
 export default function LandingNav() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Close the mobile menu with Escape
   useEffect(() => {
@@ -15,7 +23,7 @@ export default function LandingNav() {
   }, [open]);
 
   return (
-    <header className="lp-nav">
+    <header className={`lp-nav${scrolled ? " is-scrolled" : ""}`}>
       <div className="lp-container lp-nav-inner">
         <a href="#top" className="lp-brand" aria-label="GradeIQ UPSA, back to top">
           <img src="/upsa-logo.png" alt="" width="40" height="40" />

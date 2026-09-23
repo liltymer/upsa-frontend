@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+// Stagger helper for lists that reveal one item after another
+const delay = (i, step = 0.08) => ({ "--reveal-delay": `${i * step}s` });
 import { Link } from "react-router-dom";
 import Icon from "./Icon";
 import useReferenceData from "../../hooks/useReferenceData";
@@ -20,8 +23,8 @@ export function Facts() {
     <section className="lp-facts" aria-label="Key facts">
       <div className="lp-container">
         <ul className="lp-facts-list">
-          {FACTS.map((fact) => (
-            <li key={fact.label}>
+          {FACTS.map((fact, i) => (
+            <li key={fact.label} data-reveal style={delay(i)}>
               <span className="lp-fact-value">{fact.value}</span>
               <span className="lp-fact-label">{fact.label}</span>
             </li>
@@ -36,14 +39,14 @@ export function Features() {
   return (
     <section id="features" className="lp-section lp-section-soft" aria-labelledby="lp-features-title">
       <div className="lp-container">
-        <div className="lp-section-head">
+        <div className="lp-section-head" data-reveal>
           <p className="lp-eyebrow">{FEATURES_INTRO.eyebrow}</p>
           <h2 id="lp-features-title" className="lp-h2">{FEATURES_INTRO.title}</h2>
           <p className="lp-lead">{FEATURES_INTRO.body}</p>
         </div>
         <div className="lp-feature-grid">
-          {FEATURES.map((feature) => (
-            <article key={feature.title} className="lp-feature">
+          {FEATURES.map((feature, i) => (
+            <article key={feature.title} className="lp-feature" data-reveal style={delay(i % 3)}>
               <div className="lp-icon"><Icon name={feature.icon} /></div>
               <h3>{feature.title}</h3>
               <p>{feature.body}</p>
@@ -60,7 +63,7 @@ export function TopUp() {
   return (
     <section id="top-up" className="lp-section lp-section-navy lp-topup" aria-labelledby="lp-topup-title">
       <div className="lp-container lp-topup-grid">
-        <div>
+        <div data-reveal="left">
           <p className="lp-eyebrow">{TOP_UP.eyebrow}</p>
           <h2 id="lp-topup-title" className="lp-h2">{TOP_UP.title}</h2>
           <p className="lp-lead">{TOP_UP.body}</p>
@@ -74,7 +77,7 @@ export function TopUp() {
           </ul>
         </div>
 
-        <div className="lp-journey" aria-label="Example of a diploma and a top-up degree on one account">
+        <div className="lp-journey" aria-label="Example of a diploma and a top-up degree on one account" data-reveal="right" style={delay(1, 0.15)}>
           <span className="lp-journey-tag">{example.label}</span>
           <div className="lp-programme-card">
             <div>
@@ -110,14 +113,14 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="lp-section" aria-labelledby="lp-steps-title">
       <div className="lp-container">
-        <div className="lp-section-head">
+        <div className="lp-section-head" data-reveal>
           <p className="lp-eyebrow">How it works</p>
           <h2 id="lp-steps-title" className="lp-h2">Ready in three steps</h2>
           <p className="lp-lead">If you have your result slip, you have everything you need.</p>
         </div>
         <ol className="lp-steps">
-          {STEPS.map((step) => (
-            <li key={step.title} className="lp-step">
+          {STEPS.map((step, i) => (
+            <li key={step.title} className="lp-step" data-reveal style={delay(i, 0.12)}>
               <h3>{step.title}</h3>
               <p>{step.body}</p>
             </li>
@@ -131,19 +134,33 @@ export function HowItWorks() {
 export function Grading() {
   const { grade_scale: gradeScale, classification_bands: bands } = useReferenceData();
   const [scale, setScale] = useState("degree");
+  const [switching, setSwitching] = useState(false);
   const shownBands = bands[scale] || [];
+
+  // Replay the band fade each time the tab changes
+  useEffect(() => {
+    if (!switching) return undefined;
+    const timer = setTimeout(() => setSwitching(false), 450);
+    return () => clearTimeout(timer);
+  }, [switching]);
+
+  const chooseScale = (id) => {
+    if (id === scale) return;
+    setScale(id);
+    setSwitching(true);
+  };
 
   return (
     <section id="grading" className="lp-section lp-section-soft" aria-labelledby="lp-grading-title">
       <div className="lp-container">
-        <div className="lp-section-head">
+        <div className="lp-section-head" data-reveal>
           <p className="lp-eyebrow">{GRADING.eyebrow}</p>
           <h2 id="lp-grading-title" className="lp-h2">{GRADING.title}</h2>
           <p className="lp-lead">{GRADING.body}</p>
         </div>
 
         <div className="lp-grading-grid">
-          <div className="lp-panel">
+          <div className="lp-panel" data-reveal>
             <h3 className="lp-panel-title">Grade points</h3>
             <table className="lp-table">
               <thead>
@@ -167,7 +184,7 @@ export function Grading() {
             </table>
           </div>
 
-          <div>
+          <div data-reveal style={delay(1, 0.15)}>
             <div className="lp-panel">
               <h3 className="lp-panel-title">Class on your final CGPA</h3>
               <div className="lp-tabs" role="tablist" aria-label="Programme type">
@@ -183,13 +200,18 @@ export function Grading() {
                     aria-selected={scale === tab.id}
                     aria-controls="lp-bands"
                     className="lp-tab"
-                    onClick={() => setScale(tab.id)}
+                    onClick={() => chooseScale(tab.id)}
                   >
                     {tab.label}
                   </button>
                 ))}
               </div>
-              <ul id="lp-bands" className="lp-bands" role="tabpanel" aria-labelledby={`lp-tab-${scale}`}>
+              <ul
+                id="lp-bands"
+                className={`lp-bands${switching ? " is-switching" : ""}`}
+                role="tabpanel"
+                aria-labelledby={`lp-tab-${scale}`}
+              >
                 {shownBands.map((band, i) => (
                   <li key={band.label} className={`lp-band${i === 0 ? " top" : ""}`}>
                     <strong>{band.label}</strong>
@@ -210,13 +232,13 @@ export function Faq() {
   return (
     <section id="faq" className="lp-section" aria-labelledby="lp-faq-title">
       <div className="lp-container">
-        <div className="lp-section-head center">
+        <div className="lp-section-head center" data-reveal>
           <p className="lp-eyebrow">Questions</p>
           <h2 id="lp-faq-title" className="lp-h2">Frequently asked questions</h2>
         </div>
         <div className="lp-faq">
           {FAQS.map((item, i) => (
-            <details key={item.q} open={i === 0}>
+            <details key={item.q} open={i === 0} data-reveal style={delay(i, 0.05)}>
               <summary>
                 <span>{item.q}</span>
                 <Icon name="plus" size={20} strokeWidth={2} />
@@ -234,12 +256,12 @@ export function Support() {
   return (
     <section id="support" className="lp-section lp-section-soft" aria-labelledby="lp-support-title">
       <div className="lp-container lp-support-grid">
-        <div>
+        <div data-reveal="left">
           <p className="lp-eyebrow">{SUPPORT.eyebrow}</p>
           <h2 id="lp-support-title" className="lp-h2">{SUPPORT.title}</h2>
           <p className="lp-lead">{SUPPORT.body}</p>
         </div>
-        <div className="lp-contact-list">
+        <div className="lp-contact-list" data-reveal="right" style={delay(1, 0.12)}>
           <a className="lp-contact" href={`mailto:${CONTACT.email}`}>
             <span className="lp-icon"><Icon name="mail" /></span>
             <span>
@@ -263,7 +285,7 @@ export function Support() {
 export function Closing() {
   return (
     <section className="lp-section lp-section-navy" aria-labelledby="lp-closing-title">
-      <div className="lp-container lp-closing">
+      <div className="lp-container lp-closing" data-reveal>
         <h2 id="lp-closing-title" className="lp-h2">{CLOSING.title}</h2>
         <p className="lp-lead">{CLOSING.body}</p>
         <Link to="/register" className="lp-btn lp-btn-gold">{CLOSING.cta}</Link>
