@@ -23,9 +23,9 @@ export default function Landing() {
         <Hero />
         <Facts />
         <Features />
-        <TopUp />
         <HowItWorks />
         <Grading />
+        <TopUp />
         <Faq />
         <Support />
         <Closing />

@@ -8,6 +8,7 @@ import {
   FACTS,
   FAQS,
   FEATURES,
+  FEATURES_INTRO,
   GRADING,
   STEPS,
   SUPPORT,
@@ -36,11 +37,9 @@ export function Features() {
     <section id="features" className="lp-section lp-section-soft" aria-labelledby="lp-features-title">
       <div className="lp-container">
         <div className="lp-section-head">
-          <p className="lp-eyebrow">What you can do</p>
-          <h2 id="lp-features-title" className="lp-h2">Everything you need to follow your results</h2>
-          <p className="lp-lead">
-            Built around how UPSA grades courses, calculates GPA and classifies students.
-          </p>
+          <p className="lp-eyebrow">{FEATURES_INTRO.eyebrow}</p>
+          <h2 id="lp-features-title" className="lp-h2">{FEATURES_INTRO.title}</h2>
+          <p className="lp-lead">{FEATURES_INTRO.body}</p>
         </div>
         <div className="lp-feature-grid">
           {FEATURES.map((feature) => (
@@ -59,7 +58,7 @@ export function Features() {
 export function TopUp() {
   const { example } = TOP_UP;
   return (
-    <section id="top-up" className="lp-section lp-section-navy" aria-labelledby="lp-topup-title">
+    <section id="top-up" className="lp-section lp-section-navy lp-topup" aria-labelledby="lp-topup-title">
       <div className="lp-container lp-topup-grid">
         <div>
           <p className="lp-eyebrow">{TOP_UP.eyebrow}</p>

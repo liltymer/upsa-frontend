@@ -11,17 +11,22 @@ export const CONTACT = {
 
 export const NAV_LINKS = [
   { href: "#features", label: "Features" },
-  { href: "#top-up", label: "Top-up students" },
+  { href: "#how-it-works", label: "How it works" },
   { href: "#grading", label: "Grading" },
   { href: "#faq", label: "FAQ" },
 ];
 
+export const LINKS = {
+  linkedin: "https://www.linkedin.com/in/ahenkora-joshua-owusu-42a691320",
+  github: "https://github.com/liltymer",
+};
+
 export const HERO = {
   eyebrow: "For students of the University of Professional Studies, Accra",
-  titleLead: "Your UPSA results,",
-  titleEmphasis: "calculated the way UPSA calculates them.",
+  titleLead: "Know where you stand academically,",
+  titleEmphasis: "while there is still time to act.",
   body:
-    "Enter the grades from your result slip. GradeIQ works out your semester GPA and CGPA on the official UPSA scale, shows your class, and keeps your diploma and degree records separate.",
+    "Record your results each semester and GradeIQ tracks your GPA and CGPA on the official UPSA scale. See which semesters and courses are lifting or pulling down your grade, how close you are to the next class, and what you need in the semesters ahead to reach your goal.",
   primaryCta: "Create an account",
   secondaryCta: "Sign in",
   proof: "Checked against a UPSA transcript: semester GPAs and CGPA match to two decimal places.",
@@ -34,44 +39,51 @@ export const FACTS = [
   { value: "Free", label: "No payment for UPSA students" },
 ];
 
+export const FEATURES_INTRO = {
+  eyebrow: "What you can do",
+  title: "Turn your results into better decisions",
+  body:
+    "GradeIQ gives you a clear picture of your performance, so you can decide early where to put in more effort instead of finding out when it is too late.",
+};
+
 export const FEATURES = [
   {
     icon: "results",
-    title: "Results by semester",
-    body: "Enter each course with its code, credit hours and grade, grouped by academic year and semester like your result slip.",
+    title: "A complete semester record",
+    body: "Every course, credit hour and grade in one place, grouped by academic year and semester, with the GPA for each semester.",
   },
   {
     icon: "chart",
-    title: "GPA and CGPA tracking",
-    body: "Semester GPA and cumulative CGPA calculated on the UPSA scale, with a semester by semester chart of your progress.",
+    title: "Trends over time",
+    body: "See whether your GPA is improving or declining from one semester to the next, and which semesters pulled your CGPA down.",
   },
   {
     icon: "ladder",
-    title: "Class and standing",
-    body: "See your current class under the degree or diploma bands, how far you are from the next one, and early warnings.",
+    title: "Early warnings",
+    body: "Know your current class and how far you are from the next one. Your dashboard warns you when your CGPA is in a lower band or close to probation.",
   },
   {
     icon: "target",
-    title: "Simulator and target grade",
-    body: "Try expected grades for coming courses, or find the average grade you need to reach a target CGPA.",
+    title: "Target grade planner",
+    body: "Set a target CGPA and see the average grade you need in your remaining credits, and whether the target is still achievable.",
+  },
+  {
+    icon: "layers",
+    title: "What-if simulator",
+    body: "Try the grades you expect in coming courses and see the effect on your CGPA before the results are out.",
   },
   {
     icon: "document",
     title: "Transcript PDF",
     body: "Download an unofficial transcript laid out like the UPSA one, with TCR, TGP, GPA and CGPA for every semester.",
   },
-  {
-    icon: "layers",
-    title: "Programme history",
-    body: "Keep a completed diploma and a current degree on one account, each with its own index number and CGPA.",
-  },
 ];
 
 export const TOP_UP = {
-  eyebrow: "Diploma to degree",
-  title: "Topped up to a degree? Your diploma stays with you.",
+  eyebrow: "For top-up students",
+  title: "Moving from a diploma to a degree?",
   body:
-    "UPSA gives top-up students a new index number and a fresh CGPA. GradeIQ records each programme separately on the same account, so nothing is lost and nothing is mixed.",
+    "UPSA gives top-up students a new index number and a fresh CGPA. GradeIQ keeps each programme separately on the same account, so your diploma record is never lost or mixed with your degree.",
   points: [
     "Your diploma is kept as a completed programme with its final CGPA and class.",
     "Your degree starts at Level 300 with its own CGPA from the first semester.",
@@ -105,8 +117,8 @@ export const STEPS = [
     body: "Add each course exactly as it appears on your result slip: code, title, credit hours and grade. No marks needed.",
   },
   {
-    title: "Follow your progress",
-    body: "Your GPA, CGPA, class and transcript update as soon as you save a result.",
+    title: "Act on what you see",
+    body: "Your GPA, CGPA and class update as soon as you save a result. Use your trends, warnings and target grade to plan the semester ahead.",
   },
 ];
 
@@ -161,14 +173,43 @@ export const SUPPORT = {
 };
 
 export const CLOSING = {
-  title: "Know where you stand this semester.",
-  body: "Set up your account, enter your results, and see your GPA, CGPA and class on the UPSA scale.",
+  title: "Start tracking before your next results come out.",
+  body: "Adding your results takes a few minutes. The earlier you know where you stand, the more time you have to improve it.",
   cta: "Create an account",
 };
 
 export const FOOTER = {
-  tagline: "GPA, CGPA and class tracking for students of the University of Professional Studies, Accra.",
+  tagline:
+    "Helping students of the University of Professional Studies, Accra understand their academic performance and act on it early.",
+  columns: [
+    {
+      title: "Product",
+      links: [
+        { href: "#features", label: "Features" },
+        { href: "#how-it-works", label: "How it works" },
+        { href: "#grading", label: "Grading scale" },
+        { href: "#top-up", label: "Top-up students" },
+      ],
+    },
+    {
+      title: "Account",
+      links: [
+        { to: "/register", label: "Create an account" },
+        { to: "/login", label: "Sign in" },
+        { to: "/forgot-password", label: "Reset your password" },
+      ],
+    },
+    {
+      title: "Help",
+      links: [
+        { href: "#faq", label: "Frequently asked questions" },
+        { href: "#support", label: "Contact support" },
+      ],
+    },
+  ],
+  disclaimerTitle: "Independent project",
   disclaimer:
-    "GradeIQ UPSA is an independent student project and is not operated or endorsed by the University of Professional Studies, Accra. Your official results are on the UPSA student portal.",
-  credit: "Built by Ahenkora Joshua Owusu",
+    "GradeIQ UPSA is an independent student project and is not operated or endorsed by the University of Professional Studies, Accra. Figures shown here are calculated from the results you enter. Your official results are on the UPSA student portal.",
+  copyright: "GradeIQ UPSA. All rights reserved.",
+  credit: "Designed and built by Ahenkora Joshua Owusu",
 };
