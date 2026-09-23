@@ -59,7 +59,13 @@ export default function AuthLayout({ topbar, panelTitle, panelBody, points = DEF
 
       <main className="au-main">
         {topbar && <div className="au-topbar">{topbar}</div>}
-        <div className="au-content">{children}</div>
+        <div className="au-content">
+          <div className="au-card">{children}</div>
+        </div>
+        <footer className="au-foot">
+          <span>&copy; {new Date().getFullYear()} GradeIQ UPSA</span>
+          <Link to="/">Back to home</Link>
+        </footer>
       </main>
     </div>
   );
