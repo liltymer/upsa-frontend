@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { useProgrammes } from "../context/ProgrammeContext";
 import { getActiveAnnouncements, getDashboard, getInsights, setAreaLabel } from "../services/api";
 import { classStyle } from "../utils/academic";
+import campusPhoto from "../assets/landing/campus-13-800.webp";
 
 const ACTION_ICONS = { start: "results", urgent: "alert", target: "target", trend: "chart", area: "layers", course: "results", update: "results" };
 const TABS = [
@@ -24,6 +25,33 @@ function greeting() {
 
 const storageGet = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
 const storageSet = (key, value) => { try { localStorage.setItem(key, value); } catch { /* not remembered */ } };
+
+/** "JOSHH" -> "Joshh"; names typed normally are left alone. */
+function niceName(name) {
+  if (!name) return "";
+  return name === name.toUpperCase()
+    ? name.toLowerCase().replace(/(^|[\s-])\S/g, (c) => c.toUpperCase())
+    : name;
+}
+
+/** CGPA as a gold ring out of 4.00. */
+function CgpaRing({ value }) {
+  const r = 52;
+  const c = 2 * Math.PI * r;
+  const pct = Math.min(Math.max(value / 4, 0), 1);
+  return (
+    <div className="db-ring" role="img" aria-label={`CGPA ${value.toFixed(2)} out of 4.00`}>
+      <svg viewBox="0 0 128 128" width="128" height="128" aria-hidden="true">
+        <circle cx="64" cy="64" r={r} className="db-ring-track" />
+        <circle cx="64" cy="64" r={r} className="db-ring-fill" strokeDasharray={`${c * pct} ${c}`} />
+      </svg>
+      <div className="db-ring-text">
+        <strong>{value.toFixed(2)}</strong>
+        <span>of 4.00</span>
+      </div>
+    </div>
+  );
+}
 
 /** One plain sentence that answers "how am I doing?" */
 function headline(s) {
@@ -69,44 +97,61 @@ function BandMeter({ summary }) {
 
 const STAGE_ICONS = { not_started: "results", top_up_start: "layers", early: "chart", middle: "chart", final: "target", complete: "check", completed_programme: "check" };
 
-/** Where the student is in the programme and what it means for them. */
-function StageCard({ stage }) {
+const shortSem = (h) => `${h.academic_year.slice(2, 4)}/${h.academic_year.slice(7, 9)} S${h.semester}`;
+
+/** Where the student is in the programme, drawn as a semester timeline. */
+function StageCard({ stage, history = [], topUpLink }) {
   if (!stage?.key) return null;
   const range = stage.finish || stage.next_semester;
+  const steps = Array.from({ length: stage.total_semesters }, (_, i) => ({
+    done: i < stage.semesters_done,
+    next: i === stage.semesters_done,
+    label: history[i] ? shortSem(history[i]) : `Sem ${i + 1}`,
+  }));
   return (
-    <section className="db-card db-stage" aria-labelledby="db-stage-title">
-      <div className="db-stage-main">
+    <section className="db-card db-stage db-rise" aria-labelledby="db-stage-title">
+      <div className="db-stage-head">
         <span className="db-stage-icon"><Icon name={STAGE_ICONS[stage.key] || "chart"} size={22} /></span>
         <div>
           <p className="db-label">Where you are</p>
           <h2 id="db-stage-title" className="db-h2">{stage.title}</h2>
-          <p className="db-stage-sub">{stage.label}</p>
-          <div className="db-progress db-stage-progress" aria-hidden="true">
-            {Array.from({ length: stage.total_semesters }, (_, i) => (
-              <span key={i} className={i < stage.semesters_done ? "on" : ""} />
-            ))}
-          </div>
-          {stage.messages.map((m) => <p key={m} className="db-stage-msg">{m}</p>)}
         </div>
+        <span className="db-stage-count">{stage.label}</span>
       </div>
-      {range && (
-        <div className="db-stage-range" aria-label={stage.finish ? "Where you can finish" : "Where your CGPA can go next semester"}>
-          <p className="db-label">{stage.finish ? `Where you can finish (${stage.finish.remaining_credits} credits left)` : "Next semester could leave you at"}</p>
-          <div className="db-range-row">
-            <div className="db-range-cell">
-              <small>Averaging C</small>
-              <strong>{range.with_c.toFixed(2)}</strong>
-              <span>{range.with_c_class}</span>
-            </div>
-            <span className="db-range-to" aria-hidden="true">to</span>
-            <div className="db-range-cell db-range-best">
-              <small>Straight A's</small>
-              <strong>{range.best.toFixed(2)}</strong>
-              <span>{range.best_class}</span>
+
+      <ol className="db-timeline" aria-label={stage.label}>
+        {steps.map((st, i) => (
+          <li key={i} className={st.done ? "done" : st.next ? "next" : ""}>
+            <span className="db-timeline-dot">{st.done ? <Icon name="check" size={13} strokeWidth={3} /> : i + 1}</span>
+            <span className="db-timeline-label">{st.label}</span>
+          </li>
+        ))}
+      </ol>
+
+      <div className={`db-stage-body${range ? "" : " db-stage-body-single"}`}>
+        <div className="db-stage-text">
+          {stage.messages.map((m) => <p key={m} className="db-stage-msg">{m}</p>)}
+          {topUpLink && <Link to="/profile" className="db-btn db-btn-sm db-stage-cta">Add my top-up <Icon name="arrowRight" size={16} /></Link>}
+        </div>
+        {range && (
+          <div className="db-stage-range">
+            <p className="db-label">{stage.finish ? `Where you can finish (${stage.finish.remaining_credits} credits left)` : "Next semester could leave you at"}</p>
+            <div className="db-range-row">
+              <div className="db-range-cell">
+                <small>Averaging C</small>
+                <strong>{range.with_c.toFixed(2)}</strong>
+                <span>{range.with_c_class}</span>
+              </div>
+              <span className="db-range-to" aria-hidden="true">to</span>
+              <div className="db-range-cell db-range-best">
+                <small>Straight A's</small>
+                <strong>{range.best.toFixed(2)}</strong>
+                <span>{range.best_class}</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }
@@ -284,7 +329,9 @@ export default function Dashboard() {
   }
 
   const s = insights.summary;
-  const displayName = overview.preferred_name || overview.name;
+  const displayName = niceName(overview.preferred_name || overview.name);
+  const offerTopUp = insights.stage?.key === "complete" && insights.award_type === "diploma"
+    && !(overview.other_programmes || []).some((p) => p.award_type === "degree");
   const cls = classStyle(s.classification || "No results yet");
   const openProgramme = (id, path) => { setSelectedId(id); navigate(path); };
 
@@ -298,18 +345,44 @@ export default function Dashboard() {
 
   return (
     <div className="db">
-      {/* ---------- Header ---------- */}
-      <header className="db-header">
-        <div>
-          <p className="db-eyebrow">{greeting()}, {displayName}</p>
-          <h1 className="db-title">Your academic overview</h1>
-          <p className="db-meta">
-            {overview.programme} · Level {overview.level} · {overview.index_number || "No index number"}
-            {overview.status === "completed" ? " · Completed programme" : ""}
-          </p>
+      {/* ---------- Hero ---------- */}
+      <section className="db-hero db-rise" aria-label="Summary">
+        <img className="db-hero-photo" src={campusPhoto} alt="" aria-hidden="true" />
+        <div className="db-hero-top">
+          <div>
+            <p className="db-hero-greet">{greeting()}, {displayName}</p>
+            <h1 className="db-hero-title">Your academic overview</h1>
+            <p className="db-hero-meta">
+              {overview.programme} · Level {overview.level} · {overview.index_number || "No index number"}
+              {overview.status === "completed" ? " · Completed programme" : ""}
+            </p>
+          </div>
+          <Link to="/results" className="db-btn"><Icon name="results" size={18} /> Add results</Link>
         </div>
-        <Link to="/results" className="db-btn"><Icon name="results" size={18} /> Add results</Link>
-      </header>
+
+        {insights.has_results && (
+          <div className="db-hero-score">
+            <div className="db-hero-ring">
+              <CgpaRing value={s.cgpa} />
+              <div className="db-hero-ring-side">
+                <p className="db-label">
+                  Your CGPA
+                  <Help label="CGPA" tone="dark">
+                    Your Cumulative Grade Point Average: the average of every grade you have earned on this programme,
+                    weighted by credit hours. It decides your final class.
+                  </Help>
+                </p>
+                <span className="db-pill" style={{ color: cls.color, background: cls.bg, borderColor: cls.border }}>{s.classification}</span>
+              </div>
+            </div>
+            <div className="db-hero-text">
+              <p className="db-headline-main">{head.main}</p>
+              {head.sub && <p className="db-headline-sub">{head.sub}</p>}
+              <BandMeter summary={s} />
+            </div>
+          </div>
+        )}
+      </section>
 
       {announcements.map((a) => (
         <div key={a.id} className={`db-banner db-banner-${a.priority === "urgent" ? "urgent" : "info"}`}>
@@ -322,7 +395,7 @@ export default function Dashboard() {
         <Checklist items={checklist} onDismiss={() => { storageSet(checklistKey, "1"); setChecklistHidden(true); }} />
       )}
 
-      {!insights.has_results && <StageCard stage={insights.stage} />}
+      {!insights.has_results && <StageCard stage={insights.stage} history={insights.history} />}
 
       {!insights.has_results ? (
         <section className="db-card db-empty">
@@ -333,29 +406,7 @@ export default function Dashboard() {
         </section>
       ) : (
         <>
-          {/* ---------- Headline ---------- */}
-          <section className="db-headline" aria-label="Summary">
-            <div className="db-headline-score">
-              <p className="db-label">
-                Your CGPA
-                <Help label="CGPA" tone="dark">
-                  Your Cumulative Grade Point Average: the average of every grade you have earned on this programme,
-                  weighted by credit hours. It decides your final class.
-                </Help>
-              </p>
-              <div className="db-cgpa-row">
-                <strong className="db-cgpa">{s.cgpa.toFixed(2)}</strong>
-                <span className="db-pill" style={{ color: cls.color, background: cls.bg, borderColor: cls.border }}>{s.classification}</span>
-              </div>
-            </div>
-            <div className="db-headline-text">
-              <p className="db-headline-main">{head.main}</p>
-              {head.sub && <p className="db-headline-sub">{head.sub}</p>}
-              <BandMeter summary={s} />
-            </div>
-          </section>
-
-          <StageCard stage={insights.stage} />
+          <StageCard stage={insights.stage} history={insights.history} topUpLink={offerTopUp} />
 
           {/* ---------- Tabs ---------- */}
           <div className="db-tabs" role="tablist" aria-label="Dashboard sections">
@@ -370,7 +421,8 @@ export default function Dashboard() {
           {tab === "overview" && (
             <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="db-panel">
               <section className="db-stats" aria-label="Quick figures">
-                <article className="db-card db-stat">
+                <article className="db-card db-stat db-rise">
+                  <span className="db-stat-icon db-stat-icon-blue"><Icon name="chart" size={20} /></span>
                   <p className="db-label">Latest semester GPA
                     <Help label="Semester GPA">The average of your grades in one semester only. Your CGPA combines all of them.</Help>
                   </p>
@@ -385,7 +437,8 @@ export default function Dashboard() {
                     </p>
                   )}
                 </article>
-                <article className="db-card db-stat">
+                <article className="db-card db-stat db-rise">
+                  <span className="db-stat-icon db-stat-icon-gold"><Icon name="layers" size={20} /></span>
                   <p className="db-label">Credits completed
                     <Help label="Credits">Each course is worth credit hours (usually 2 to 4). Courses with more credits count more towards your CGPA.</Help>
                   </p>
@@ -398,7 +451,8 @@ export default function Dashboard() {
                   </div>
                   <p className="db-note">{insights.estimate.semesters_done} of {insights.estimate.total_semesters} semesters recorded</p>
                 </article>
-                <article className="db-card db-stat">
+                <article className="db-card db-stat db-rise">
+                  <span className="db-stat-icon db-stat-icon-green"><Icon name="target" size={20} /></span>
                   <p className="db-label">Best semester</p>
                   <strong className="db-stat-value">{s.best_semester.gpa.toFixed(2)}</strong>
                   <p className="db-stat-sub">{s.best_semester.title}</p>
@@ -410,7 +464,7 @@ export default function Dashboard() {
 
               {insights.actions.length > 0 && (
                 <section className="db-card" aria-labelledby="db-next">
-                  <div className="db-card-head"><h2 id="db-next" className="db-h2">What to do next</h2></div>
+                  <div className="db-card-head"><h2 id="db-next" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="arrowRight" size={16} /></span>What to do next</h2></div>
                   <ol className="db-actions">
                     {insights.actions.map((a) => (
                       <li key={a.title} className={`db-action db-action-${a.kind}`}>
@@ -429,7 +483,7 @@ export default function Dashboard() {
               <div className="db-grid db-grid-wide">
                 <section className="db-card" aria-labelledby="db-trend">
                   <div className="db-card-head">
-                    <h2 id="db-trend" className="db-h2">GPA over time</h2>
+                    <h2 id="db-trend" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="chart" size={16} /></span>GPA over time</h2>
                     <Link to="/gpa" className="db-link">Details</Link>
                   </div>
                   <TrendChart history={insights.history} bands={insights.classification_bands} />
@@ -437,7 +491,7 @@ export default function Dashboard() {
 
                 <section className="db-card db-target" aria-labelledby="db-target">
                   <div className="db-card-head">
-                    <h2 id="db-target" className="db-h2">Reaching {s.next_class || "the top"}</h2>
+                    <h2 id="db-target" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="target" size={16} /></span>Reaching {s.next_class || "the top"}</h2>
                   </div>
                   {!s.next_class ? (
                     <p className="db-body">You are already in the highest class. Keep your semester GPAs at this level to hold it.</p>
@@ -468,7 +522,7 @@ export default function Dashboard() {
               <div className="db-grid">
                 <section className="db-card" aria-labelledby="db-down">
                   <div className="db-card-head">
-                    <h2 id="db-down" className="db-h2">Courses that lowered your CGPA</h2>
+                    <h2 id="db-down" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="arrowDownRight" size={16} /></span>Courses that lowered your CGPA</h2>
                     <Help label="Lowered your CGPA">
                       How much higher your CGPA would be without that course. Low grades in courses with more credits cost the most.
                     </Help>
@@ -487,7 +541,7 @@ export default function Dashboard() {
                 </section>
 
                 <section className="db-card" aria-labelledby="db-up">
-                  <div className="db-card-head"><h2 id="db-up" className="db-h2">Courses that raised your CGPA</h2></div>
+                  <div className="db-card-head"><h2 id="db-up" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="arrowUp" size={16} /></span>Courses that raised your CGPA</h2></div>
                   {insights.strongest.length ? (
                     <ul className="db-courses">
                       {insights.strongest.map((c) => (
@@ -505,7 +559,7 @@ export default function Dashboard() {
               <div className="db-grid">
                 <section className="db-card" aria-labelledby="db-areas">
                   <div className="db-card-head">
-                    <h2 id="db-areas" className="db-h2">By subject area</h2>
+                    <h2 id="db-areas" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="layers" size={16} /></span>By subject area</h2>
                     <Help label="Subject areas">
                       Courses grouped by the letters at the start of their code. Rename an area with the pencil if the name does not fit.
                     </Help>
@@ -519,7 +573,7 @@ export default function Dashboard() {
                 </section>
 
                 <section className="db-card" aria-labelledby="db-spread">
-                  <div className="db-card-head"><h2 id="db-spread" className="db-h2">How many of each grade</h2></div>
+                  <div className="db-card-head"><h2 id="db-spread" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="results" size={16} /></span>How many of each grade</h2></div>
                   <GradeSpreadChart distribution={insights.grade_distribution} />
                 </section>
               </div>
@@ -531,7 +585,7 @@ export default function Dashboard() {
       {/* ---------- Academic history ---------- */}
       {overview.other_programmes?.length > 0 && (
         <section className="db-card" aria-labelledby="db-history">
-          <div className="db-card-head"><h2 id="db-history" className="db-h2">Academic history</h2></div>
+          <div className="db-card-head"><h2 id="db-history" className="db-h2"><span className="db-h2-icon" aria-hidden="true"><Icon name="document" size={16} /></span>Academic history</h2></div>
           <div className="db-history">
             {overview.other_programmes.map((p) => {
               const pc = classStyle(p.classification);
