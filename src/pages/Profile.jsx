@@ -76,7 +76,7 @@ function ProgrammeCard({ enrollment, programmes, academicYears, canDelete, onSav
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
             {enrollment.index_number || "Index number not added"} ·{" "}
             {enrollment.award_type === "diploma" ? "Diploma" : enrollment.is_top_up ? "Degree (Top-up)" : "Degree"} ·{" "}
-            {enrollment.is_current ? `Current · Level ${enrollment.current_level}` : "Completed"} · from {enrollment.start_academic_year}
+            {enrollment.completed || !enrollment.is_current ? "Completed" : `Current · ${enrollment.level_label || `Level ${enrollment.current_level}`}`} · from {enrollment.start_academic_year}
           </p>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -158,6 +158,7 @@ export default function Profile() {
 
   const [profile, setProfile] = useState(null);
   const [name, setName] = useState("");
+  const [preferredName, setPreferredName] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [toast, setToast] = useState(null);
@@ -176,6 +177,7 @@ export default function Profile() {
       .then((res) => {
         setProfile(res.data);
         setName(res.data.name || "");
+        setPreferredName(res.data.preferred_name || "");
       })
       .catch(() => showToast("Failed to load profile.", "error"))
       .finally(() => setLoading(false));
@@ -205,7 +207,7 @@ export default function Profile() {
     e.preventDefault();
     setBusy("name");
     try {
-      const res = await API.put("/students/me", { name });
+      const res = await API.put("/students/me", { name, preferred_name: preferredName });
       login(token, { ...user, name: res.data.name });
       showToast("Profile updated successfully.");
     } catch (err) {
@@ -285,12 +287,16 @@ export default function Profile() {
               <input className="form-input" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} />
             </div>
             <div className="form-group">
+              <label className="form-label">What should we call you?</label>
+              <input className="form-input" value={preferredName} maxLength={60} onChange={(e) => setPreferredName(e.target.value)} placeholder="e.g. Joshua" />
+            </div>
+            <div className="form-group">
               <label className="form-label">Email Address</label>
               <input className="form-input" value={profile?.email || ""} disabled />
             </div>
             <div>
               <button type="submit" disabled={busy === "name"} className="btn btn-primary">
-                {busy === "name" ? "Saving..." : "Save Name"}
+                {busy === "name" ? "Saving..." : "Save"}
               </button>
             </div>
           </form>

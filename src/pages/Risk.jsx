@@ -240,7 +240,7 @@ export default function Risk() {
             </div>
 
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Link to="/simulator" className="btn btn-primary">Calculate Target Grade</Link>
+              <Link to="/planner" className="btn btn-primary">Calculate Target Grade</Link>
               <Link to="/gpa" className="btn btn-outline">View GPA History</Link>
             </div>
           </div>
