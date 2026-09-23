@@ -4,8 +4,11 @@ import axios from "axios";
 // BASE INSTANCE
 // ================================
 
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "https://gradeiq-api.onrender.com";
+
 const API = axios.create({
-  baseURL: "https://gradeiq-api.onrender.com",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -36,7 +39,9 @@ API.interceptors.request.use(
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // A failed login is also a 401 — let the login page show the error
+    const isLoginRequest = error.config?.url?.startsWith("/auth/login");
+    if (error.response?.status === 401 && !isLoginRequest) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/login";
@@ -44,6 +49,24 @@ API.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// ================================
+// ERRORS
+// FastAPI returns `detail` as a string for HTTPException
+// and as an array of objects for validation (422) errors
+// ================================
+
+export const getErrorMessage = (error, fallback = "Something went wrong. Try again.") => {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail) && detail.length > 0) {
+    return detail
+      .map((d) => d?.msg?.replace(/^Value error, /, ""))
+      .filter(Boolean)
+      .join(" ") || fallback;
+  }
+  return fallback;
+};
 
 // ================================
 // AUTH
@@ -55,14 +78,12 @@ export const registerStudent = async (data) => {
 };
 
 export const loginStudent = async (email, password) => {
-  const formData = new FormData();
-  formData.append("username", email);
-  formData.append("password", password);
+  // OAuth2 password flow expects form-encoded fields named username/password
+  const body = new URLSearchParams({ username: email, password });
 
-  const response = await axios.post(
-    "https://gradeiq-api.onrender.com/auth/login",
-    formData
-  );
+  const response = await API.post("/auth/login", body, {
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  });
 
   return response.data;
 };
@@ -85,8 +106,14 @@ export const createCourse = async (data) => {
 // RESULTS
 // ================================
 
-export const getMyResults = async () => {
-  const response = await API.get("/results/me");
+// Most academic endpoints take an optional enrollmentId (programme).
+// Omitted → the student's current programme.
+const scoped = (enrollmentId, params = {}) => ({
+  params: enrollmentId ? { ...params, enrollment_id: enrollmentId } : params,
+});
+
+export const getMyResults = async (enrollmentId) => {
+  const response = await API.get("/results/me", scoped(enrollmentId));
   return response.data;
 };
 
@@ -105,24 +132,33 @@ export const deleteResult = async (resultId) => {
   return response.data;
 };
 
+export const moveResults = async (resultIds, enrollmentId) => {
+  const response = await API.post("/results/move", {
+    result_ids: resultIds,
+    enrollment_id: enrollmentId,
+  });
+  return response.data;
+};
+
 // ================================
 // GPA
 // ================================
 
-export const getCGPA = async () => {
-  const response = await API.get("/gpa/cgpa");
+export const getCGPA = async (enrollmentId) => {
+  const response = await API.get("/gpa/cgpa", scoped(enrollmentId));
   return response.data;
 };
 
-export const getGPAHistory = async () => {
-  const response = await API.get("/gpa/history");
+export const getGPAHistory = async (enrollmentId) => {
+  const response = await API.get("/gpa/history", scoped(enrollmentId));
   return response.data;
 };
 
-export const getSemesterGPA = async (year, semester) => {
-  const response = await API.get("/gpa/semester", {
-    params: { year, semester },
-  });
+export const getSemesterGPA = async (academicYear, semester, enrollmentId) => {
+  const response = await API.get(
+    "/gpa/semester",
+    scoped(enrollmentId, { academic_year: academicYear, semester })
+  );
   return response.data;
 };
 
@@ -130,8 +166,8 @@ export const getSemesterGPA = async (year, semester) => {
 // DASHBOARD
 // ================================
 
-export const getDashboard = async () => {
-  const response = await API.get("/dashboard/me");
+export const getDashboard = async (enrollmentId) => {
+  const response = await API.get("/dashboard/me", scoped(enrollmentId));
   return response.data;
 };
 
@@ -139,20 +175,23 @@ export const getDashboard = async () => {
 // TRANSCRIPT
 // ================================
 
-export const getTranscript = async () => {
-  const response = await API.get("/transcript/me");
+export const getTranscript = async (enrollmentId) => {
+  const response = await API.get("/transcript/me", scoped(enrollmentId));
   return response.data;
 };
 
-export const downloadTranscript = async () => {
+export const downloadTranscript = async (enrollmentId, filename = "transcript.pdf") => {
   const response = await API.get("/transcript/download", {
+    ...scoped(enrollmentId),
     responseType: "blob",
   });
 
-  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const url = window.URL.createObjectURL(
+    new Blob([response.data], { type: "application/pdf" })
+  );
   const link = document.createElement("a");
   link.href = url;
-  link.setAttribute("download", "transcript.pdf");
+  link.setAttribute("download", filename);
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -163,8 +202,8 @@ export const downloadTranscript = async () => {
 // TRENDS
 // ================================
 
-export const getTrends = async () => {
-  const response = await API.get("/trends/me");
+export const getTrends = async (enrollmentId) => {
+  const response = await API.get("/trends/me", scoped(enrollmentId));
   return response.data;
 };
 
@@ -172,8 +211,8 @@ export const getTrends = async () => {
 // RISK
 // ================================
 
-export const getRisk = async () => {
-  const response = await API.get("/risk/me");
+export const getRisk = async (enrollmentId) => {
+  const response = await API.get("/risk/me", scoped(enrollmentId));
   return response.data;
 };
 
@@ -181,18 +220,60 @@ export const getRisk = async () => {
 // PROJECTION
 // ================================
 
-export const simulateCGPA = async (projectedCourses) => {
-  const response = await API.post("/projection/simulate", projectedCourses);
+export const simulateCGPA = async (body, enrollmentId) => {
+  const response = await API.post("/projection/simulate", body, scoped(enrollmentId));
   return response.data;
 };
 
-export const getTargetGrade = async (targetCgpa, remainingCredits) => {
-  const response = await API.get("/projection/target", {
-    params: {
+export const getTargetGrade = async (targetCgpa, remainingCredits, enrollmentId) => {
+  const response = await API.get(
+    "/projection/target",
+    scoped(enrollmentId, {
       target_cgpa: targetCgpa,
       remaining_credits: remainingCredits,
-    },
-  });
+    })
+  );
+  return response.data;
+};
+
+// ================================
+// PROGRAMMES (ENROLLMENTS)
+// A top-up student has one per programme:
+// e.g. completed diploma + current degree
+// ================================
+
+export const getReferenceData = async () => {
+  const response = await API.get("/reference/academic");
+  return response.data;
+};
+
+export const getEnrollments = async () => {
+  const response = await API.get("/enrollments/me");
+  return response.data.enrollments;
+};
+
+export const startTopUp = async (data) => {
+  const response = await API.post("/enrollments/top-up", data);
+  return response.data;
+};
+
+export const addPreviousProgramme = async (data) => {
+  const response = await API.post("/enrollments/previous", data);
+  return response.data;
+};
+
+export const updateEnrollment = async (enrollmentId, data) => {
+  const response = await API.patch(`/enrollments/${enrollmentId}`, data);
+  return response.data;
+};
+
+export const deleteEnrollment = async (enrollmentId) => {
+  const response = await API.delete(`/enrollments/${enrollmentId}`);
+  return response.data;
+};
+
+export const linkOldAccount = async (email, password) => {
+  const response = await API.post("/enrollments/link-account", { email, password });
   return response.data;
 };
 

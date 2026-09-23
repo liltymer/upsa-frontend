@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import API from "../services/api";
+import API, { getErrorMessage } from "../services/api";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -29,8 +29,7 @@ export default function ResetPassword() {
         setTokenValid(true);
       } catch (err) {
         setError(
-          err.response?.data?.detail ||
-          "This reset link is invalid or has expired."
+          getErrorMessage(err, "This reset link is invalid or has expired.")
         );
       } finally {
         setVerifying(false);
@@ -43,8 +42,8 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
 
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
     if (form.password !== form.confirm_password) {
@@ -62,7 +61,7 @@ export default function ResetPassword() {
       setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
       setError(
-        err.response?.data?.detail || "Failed to reset password. Try again."
+        getErrorMessage(err, "Failed to reset password. Try again.")
       );
     } finally {
       setLoading(false);
@@ -291,7 +290,7 @@ export default function ResetPassword() {
                     <label className="form-label">New Password</label>
                     <input
                       type="password"
-                      placeholder="Min. 6 characters"
+                      placeholder="Min. 8 characters"
                       value={form.password}
                       onChange={(e) => {
                         setForm({ ...form, password: e.target.value });

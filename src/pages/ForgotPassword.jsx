@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import API from "../services/api";
+import API, { getErrorMessage } from "../services/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -17,7 +17,7 @@ export default function ForgotPassword() {
       setSent(true);
     } catch (err) {
       setError(
-        err.response?.data?.detail || "Something went wrong. Try again."
+        getErrorMessage(err, "Something went wrong. Try again.")
       );
     } finally {
       setLoading(false);

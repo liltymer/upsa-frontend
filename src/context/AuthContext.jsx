@@ -1,23 +1,19 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user") || "null")
-  );
-  const [loading, setLoading] = useState(true);
+function readStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+}
 
-  useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
-  }, []);
+export function AuthProvider({ children }) {
+  // Session is restored synchronously from localStorage on first render
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [user, setUser] = useState(readStoredUser);
 
   const login = (accessToken, userData) => {
     // userData now includes role — stored in localStorage
@@ -44,14 +40,15 @@ export function AuthProvider({ children }) {
         login,
         logout,
         isAuthenticated,
-        loading,
+        loading: false,
       }}
     >
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- hook lives with its provider
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

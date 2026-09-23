@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getDashboard, getRisk, getTrends } from "../services/api";
 import API from "../services/api";
+import { useProgrammes } from "../context/ProgrammeContext";
+import { classStyle as styleForClass, classifyWithBands, shortSemester } from "../utils/academic";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { setSelectedId } = useProgrammes();
   const [dashboard, setDashboard] = useState(null);
   const [risk, setRisk] = useState(null);
   const [trends, setTrends] = useState(null);
@@ -52,12 +56,17 @@ export default function Dashboard() {
 
   const cgpa = dashboard?.cgpa ?? 0;
 
-  const getMotivation = (cgpa) => {
-    if (cgpa >= 3.6) return { msg: "Outstanding! You are achieving First Class. Keep it up!", type: "green" };
-    if (cgpa >= 3.0) return { msg: `Only ${(3.6 - cgpa).toFixed(2)} points from First Class. Push harder!`, type: "gold" };
-    if (cgpa >= 2.5) return { msg: `${(3.0 - cgpa).toFixed(2)} points to Second Class Upper. Stay focused!`, type: "blue" };
-    if (cgpa >= 2.0) return { msg: "You are in Third Class. Consistent effort will lift you.", type: "amber" };
-    return { msg: "Critical: Please seek academic counseling immediately.", type: "red" };
+  // Uses the programme's own bands — a diploma aims for Distinction, a degree for First Class
+  const getMotivation = () => {
+    const analysis = risk?.risk_analysis;
+    const label = dashboard?.classification;
+    if (!analysis || label === "No results yet") {
+      return { msg: "Add your results to see where you stand.", type: "blue" };
+    }
+    if (!analysis.next_class) return { msg: `Outstanding! You are on track for ${label}. Keep it up!`, type: "green" };
+    if (analysis.risk_level === "High") return { msg: "Critical: Please seek academic counseling immediately.", type: "red" };
+    const type = analysis.risk_level === "Low" ? "gold" : "blue";
+    return { msg: `${analysis.gap_to_next_class.toFixed(2)} points to ${analysis.next_class}. Stay focused!`, type };
   };
 
   const getRiskStyle = (level) => {
@@ -72,14 +81,6 @@ export default function Dashboard() {
     return { color: "var(--amber)", bg: "var(--amber-bg)" };
   };
 
-  const getClassStyle = (cgpa) => {
-    if (cgpa >= 3.6) return { label: "First Class", color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)" };
-    if (cgpa >= 3.0) return { label: "Second Class Upper", color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)" };
-    if (cgpa >= 2.5) return { label: "Second Class Lower", color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)" };
-    if (cgpa >= 2.0) return { label: "Third Class", color: "var(--orange)", bg: "var(--orange-bg)", border: "var(--orange-border)" };
-    if (cgpa >= 1.0) return { label: "Pass", color: "var(--text-muted)", bg: "#F9FAFB", border: "var(--border)" };
-    return { label: "Fail", color: "var(--red)", bg: "var(--red-bg)", border: "var(--red-border)" };
-  };
 
   const getPriorityStyle = (priority) => {
     if (priority === "urgent") return { color: "var(--red)", bg: "var(--red-bg)", border: "var(--red-border)", label: "Urgent" };
@@ -87,10 +88,17 @@ export default function Dashboard() {
     return { color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)", label: "Notice" };
   };
 
-  const motivation = getMotivation(cgpa);
+  const motivation = getMotivation();
   const riskStyle = getRiskStyle(risk?.risk_analysis?.risk_level);
   const trendStyle = getTrendStyle(trends?.trend_analysis?.trend);
-  const classStyle = getClassStyle(cgpa);
+  const classStyle = styleForClass(dashboard?.classification);
+  const bands = dashboard?.classification_bands || [];
+  const otherProgrammes = dashboard?.other_programmes || [];
+
+  const openProgramme = (enrollmentId, path) => {
+    setSelectedId(enrollmentId);
+    navigate(path);
+  };
 
   const alertTypeMap = {
     green: "alert-green", gold: "alert-gold",
@@ -169,7 +177,8 @@ export default function Dashboard() {
                   borderRadius: "50%",
                   background: "var(--gold)",
                 }} />
-                Academic Year {user?.academic_year || dashboard?.academic_year || "2024/2025"}
+                Academic Year {dashboard?.academic_year || user?.academic_year}
+                {dashboard?.programme ? ` · ${dashboard.programme} · Level ${dashboard.level}` : ""}
               </div>
 
               <h1 style={{
@@ -189,7 +198,7 @@ export default function Dashboard() {
                 fontFamily: "var(--font-heading)",
                 marginBottom: 20,
               }}>
-                {user?.index_number || dashboard?.index_number}
+                {dashboard?.index_number || user?.index_number}
               </p>
 
               <div
@@ -351,6 +360,60 @@ export default function Dashboard() {
           MAIN CONTENT
       ================================ */}
       <div className="page-content" style={{ marginTop: 28 }}>
+
+        {/* ================================
+            PROGRAMME NEEDS REVIEW
+            (created when diploma results were separated from a degree)
+        ================================ */}
+        {dashboard?.needs_review && (
+          <div className="alert alert-gold" style={{ marginBottom: 20 }}>
+            We separated your diploma results from your degree so each has its own CGPA.
+            Please confirm your programme details and add your diploma index number.{" "}
+            <Link to="/profile" style={{ fontWeight: 700, textDecoration: "underline" }}>Review programmes →</Link>
+          </div>
+        )}
+
+        {/* ================================
+            ACADEMIC HISTORY — previous programmes (e.g. diploma before a top-up)
+        ================================ */}
+        {otherProgrammes.length > 0 && (
+          <div className="card" style={{ marginBottom: 24 }}>
+            <h3 className="section-title">Academic History</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+              {otherProgrammes.map((p) => {
+                const ps = styleForClass(p.classification);
+                return (
+                  <div key={p.id} style={{ border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", padding: 16 }}>
+                    <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 14, color: "var(--navy)" }}>
+                      {p.programme}
+                    </p>
+                    <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "2px 0 10px" }}>
+                      {p.index_number || "Index number not added"} · {p.status === "completed" ? "Completed" : "Active"}
+                    </p>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+                      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 24, color: "var(--navy)" }}>
+                        {p.cgpa.toFixed(2)}
+                      </span>
+                      {p.classification && (
+                        <span className="badge" style={{ background: ps.bg, color: ps.color, border: `1px solid ${ps.border}` }}>
+                          {p.classification}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                      <button type="button" className="btn btn-outline btn-sm" onClick={() => openProgramme(p.id, "/results")}>
+                        Results
+                      </button>
+                      <button type="button" className="btn btn-outline btn-sm" onClick={() => openProgramme(p.id, "/transcript")}>
+                        Transcript
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ================================
             ANNOUNCEMENTS BANNER
@@ -602,11 +665,7 @@ export default function Dashboard() {
               }}>
                 {trends.trend_analysis.history.map((item, i) => {
                   const pct = (item.gpa / 4.0) * 100;
-                  const barColor = item.gpa >= 3.6 ? "#22C55E"
-                    : item.gpa >= 3.0 ? "#3B82F6"
-                    : item.gpa >= 2.5 ? "#F59E0B"
-                    : item.gpa >= 2.0 ? "#F97316"
-                    : "#EF4444";
+                  const barColor = styleForClass(classifyWithBands(item.gpa, bands)).bar;
                   return (
                     <div key={i} style={{
                       padding: "12px 14px",
@@ -624,7 +683,7 @@ export default function Dashboard() {
                           fontWeight: 700, fontSize: 13,
                           color: "var(--navy)",
                         }}>
-                          Year {item.year} — Sem {item.semester}
+                          {shortSemester(item.academic_year, item.semester)}
                         </p>
                         <span style={{
                           fontFamily: "var(--font-heading)",

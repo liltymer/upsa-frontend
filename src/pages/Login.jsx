@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { loginStudent, getDashboard } from "../services/api";
+import { loginStudent, getDashboard, getErrorMessage } from "../services/api";
 
 export default function Login() {
   const { login } = useAuth();
@@ -39,7 +39,7 @@ export default function Login() {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Invalid email or password.");
+      setError(getErrorMessage(err, "Invalid email/index number or password."));
     } finally {
       setLoading(false);
     }
@@ -126,8 +126,8 @@ export default function Login() {
 
             <form onSubmit={handleSubmit}>
               <div className="form-group" style={{ marginBottom: 18 }}>
-                <label className="form-label">Email Address</label>
-                <input type="email" name="email" placeholder="you@gmail.com" value={form.email} onChange={handleChange} required className="form-input" />
+                <label className="form-label">Email or Index Number</label>
+                <input type="text" name="email" autoComplete="username" placeholder="you@gmail.com or 10324631" value={form.email} onChange={handleChange} required className="form-input" />
               </div>
 
               <div className="form-group" style={{ marginBottom: 12 }}>

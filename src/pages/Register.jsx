@@ -1,45 +1,44 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { registerStudent } from "../services/api";
-
-const PROGRAMMES = [
-  "Diploma in Accounting",
-  "Diploma in Marketing",
-  "Diploma in Management",
-  "Diploma in Public Relations",
-  "Diploma in Information Technology Management",
-  "Bachelor of Science in Data Science and Analytics",
-  "Bachelor of Laws (LLB)",
-  "Bachelor of Arts in Communication Studies",
-  "Bachelor of Science in Logistics and Transport Management",
-  "Bachelor of Arts in Public Relations Management",
-  "Bachelor of Science in Accounting",
-  "Bachelor of Science in Accounting and Finance",
-  "Bachelor of Science in Business Economics",
-  "Bachelor of Science in Actuarial Science",
-  "Bachelor of Science in Banking and Finance",
-  "Bachelor of Business Administration",
-  "Bachelor of Science in Information Technology",
-  "Bachelor of Science in Marketing",
-  "Bachelor of Science in Real Estate Management and Finance",
-  "Other",
-];
+import { registerStudent, getErrorMessage } from "../services/api";
+import useReferenceData from "../hooks/useReferenceData";
 
 const LEVELS = [100, 200, 300, 400];
-const ACADEMIC_YEARS = ["2021/2022", "2022/2023", "2023/2024", "2024/2025", "2025/2026"];
 
 export default function Register() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ name: "", index_number: "", email: "", password: "", confirm_password: "", programme: "", level: "", academic_year: "" });
+  const { programmes, academic_years: academicYears } = useReferenceData();
+  const [form, setForm] = useState({
+    name: "", index_number: "", email: "", password: "", confirm_password: "",
+    programme: "", level: "", academic_year: "",
+    is_top_up: false,
+    prev_index_number: "", prev_programme: "", prev_start_year: "",
+  });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    const next = { ...form, [name]: type === "checkbox" ? checked : value };
+    // A top-up starts at Level 300 of a degree
+    if (name === "is_top_up") {
+      next.level = checked ? "300" : "";
+      if (checked && next.programme.toLowerCase().startsWith("diploma")) next.programme = "";
+    }
+    setForm(next);
     setError("");
   };
+
+  const isDiploma = form.programme.toLowerCase().startsWith("diploma");
+  const programmeOptions = programmes.filter((p) => !form.is_top_up || p.award_type === "degree");
+  const diplomaOptions = programmes.filter((p) => p.award_type === "diploma");
+  const levelOptions = LEVELS.filter((l) => {
+    if (form.is_top_up) return l >= 300;
+    if (isDiploma) return l <= 200;
+    return true;
+  });
 
   const handleNextStep = (e) => {
     e.preventDefault();
@@ -47,7 +46,7 @@ export default function Register() {
     if (!form.name.trim()) return setError("Please enter your full name.");
     if (!form.index_number.trim()) return setError("Please enter your index number.");
     if (!form.email.trim()) return setError("Please enter your email.");
-    if (form.password.length < 6) return setError("Password must be at least 6 characters.");
+    if (form.password.length < 8) return setError("Password must be at least 8 characters.");
     if (form.password !== form.confirm_password) return setError("Passwords do not match.");
     setStep(2);
   };
@@ -58,13 +57,32 @@ export default function Register() {
     if (!form.programme) return setError("Please select your programme.");
     if (!form.level) return setError("Please select your level.");
     if (!form.academic_year) return setError("Please select your academic year.");
+    if (form.is_top_up && form.prev_programme && !form.prev_start_year) {
+      return setError("Please select the year your diploma started.");
+    }
     setLoading(true);
     try {
-      await registerStudent({ name: form.name, index_number: form.index_number, email: form.email, password: form.password, programme: form.programme, level: Number(form.level), academic_year: form.academic_year });
+      await registerStudent({
+        name: form.name,
+        index_number: form.index_number,
+        email: form.email,
+        password: form.password,
+        programme: form.programme,
+        level: Number(form.level),
+        academic_year: form.academic_year,
+        is_top_up: form.is_top_up,
+        previous_programme: form.is_top_up && form.prev_programme
+          ? {
+              index_number: form.prev_index_number.trim() || null,
+              programme: form.prev_programme,
+              start_academic_year: form.prev_start_year,
+            }
+          : null,
+      });
       setSuccess("Account created! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
-      setError(err.response?.data?.detail || "Registration failed. Try again.");
+      setError(getErrorMessage(err, "Registration failed. Try again."));
     } finally {
       setLoading(false);
     }
@@ -172,7 +190,7 @@ export default function Register() {
 
             {step === 1 && (
               <form onSubmit={handleNextStep}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
                   <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                     <label className="form-label">Full Name</label>
                     <input type="text" name="name" placeholder="e.g. Micheal Scofield" value={form.name} onChange={handleChange} required className="form-input" />
@@ -195,7 +213,7 @@ export default function Register() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Password</label>
-                    <input type="password" name="password" placeholder="Min. 6 characters" value={form.password} onChange={handleChange} required className="form-input" />
+                    <input type="password" name="password" placeholder="Min. 8 characters" value={form.password} onChange={handleChange} required className="form-input" />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Confirm Password</label>
@@ -209,29 +227,66 @@ export default function Register() {
             {step === 2 && (
               <form onSubmit={handleSubmit}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", fontSize: 13, color: "var(--navy)" }}>
+                    <input type="checkbox" name="is_top_up" checked={form.is_top_up} onChange={handleChange} style={{ marginTop: 3 }} />
+                    <span>
+                      <strong>I am a top-up student</strong> (diploma → degree)
+                      <span style={{ display: "block", fontSize: 12, color: "var(--text-muted)" }}>
+                        Use your NEW index number above. Your diploma keeps its own CGPA.
+                      </span>
+                    </span>
+                  </label>
                   <div className="form-group">
-                    <label className="form-label">Programme / Course of Study</label>
+                    <label className="form-label">{form.is_top_up ? "Degree Programme" : "Programme / Course of Study"}</label>
                     <select name="programme" value={form.programme} onChange={handleChange} required className="form-input form-select">
                       <option value="">Select your programme...</option>
-                      {PROGRAMMES.map((p) => (<option key={p} value={p}>{p}</option>))}
+                      {programmeOptions.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
                     </select>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
                     <div className="form-group">
                       <label className="form-label">Current Level</label>
                       <select name="level" value={form.level} onChange={handleChange} required className="form-input form-select">
                         <option value="">Select level...</option>
-                        {LEVELS.map((l) => (<option key={l} value={l}>Level {l}</option>))}
+                        {levelOptions.map((l) => (<option key={l} value={l}>Level {l}</option>))}
                       </select>
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Academic Year</label>
+                      <label className="form-label">Current Academic Year</label>
                       <select name="academic_year" value={form.academic_year} onChange={handleChange} required className="form-input form-select">
                         <option value="">Select year...</option>
-                        {ACADEMIC_YEARS.map((y) => (<option key={y} value={y}>{y}</option>))}
+                        {academicYears.map((y) => (<option key={y} value={y}>{y}</option>))}
                       </select>
                     </div>
                   </div>
+
+                  {form.is_top_up && (
+                    <div style={{ border: "1.5px dashed var(--border)", borderRadius: "var(--radius-md)", padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+                      <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 13, color: "var(--navy)" }}>
+                        Your diploma (optional — you can add it later)
+                      </p>
+                      <div className="form-group">
+                        <label className="form-label">Diploma Programme</label>
+                        <select name="prev_programme" value={form.prev_programme} onChange={handleChange} className="form-input form-select">
+                          <option value="">Select diploma...</option>
+                          {diplomaOptions.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
+                        </select>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
+                        <div className="form-group">
+                          <label className="form-label">Diploma Index Number</label>
+                          <input type="text" name="prev_index_number" placeholder="e.g. 10324631" value={form.prev_index_number} onChange={handleChange} className="form-input" />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Diploma Started</label>
+                          <select name="prev_start_year" value={form.prev_start_year} onChange={handleChange} className="form-input form-select">
+                            <option value="">Select year...</option>
+                            {academicYears.map((y) => (<option key={y} value={y}>{y}</option>))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {form.programme && form.level && form.academic_year && (
                     <div style={{ background: "var(--bg-page)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", padding: "14px 16px" }}>

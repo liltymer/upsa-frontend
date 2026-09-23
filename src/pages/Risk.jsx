@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getRisk } from "../services/api";
+import { classStyle as styleForClass } from "../utils/academic";
 
 const IconChart = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -55,14 +56,15 @@ const IconCheck = () => (
   </svg>
 );
 
-const classBandsData = [
-  { label: "First Class", range: "3.6 - 4.0", min: 3.6, color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)" },
-  { label: "Second Class Upper", range: "3.0 - 3.59", min: 3.0, color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)" },
-  { label: "Second Class Lower", range: "2.5 - 2.99", min: 2.5, color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)" },
-  { label: "Third Class", range: "2.0 - 2.49", min: 2.0, color: "var(--orange)", bg: "var(--orange-bg)", border: "var(--orange-border)" },
-  { label: "Pass", range: "1.0 - 1.99", min: 1.0, color: "var(--text-muted)", bg: "#F9FAFB", border: "var(--border)" },
-  { label: "Fail", range: "0.0 - 0.99", min: 0, color: "var(--red)", bg: "var(--red-bg)", border: "var(--red-border)" },
-];
+// Icon per band label (degree and diploma share icons by rank)
+const BAND_ICON_INDEX = {
+  "First Class": 0, Distinction: 0,
+  "Second Class Upper": 1, Credit: 1,
+  "Second Class Lower": 2,
+  "Third Class": 3,
+  Pass: 4,
+  Fail: 5,
+};
 
 const bandIcons = [
   <svg key="0" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>,
@@ -115,17 +117,11 @@ export default function Risk() {
     return { color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)", dot: "#22C55E", label: "Low Risk", desc: "You are in good academic standing.", Icon: IconRiskLow };
   };
 
-  const getClassStyle = (cgpa) => {
-    if (cgpa >= 3.6) return { label: "First Class", color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)" };
-    if (cgpa >= 3.0) return { label: "Second Class Upper", color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)" };
-    if (cgpa >= 2.5) return { label: "Second Class Lower", color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)" };
-    if (cgpa >= 2.0) return { label: "Third Class", color: "var(--orange)", bg: "var(--orange-bg)", border: "var(--orange-border)" };
-    if (cgpa >= 1.0) return { label: "Pass", color: "var(--text-muted)", bg: "#F9FAFB", border: "var(--border)" };
-    return { label: "Fail", color: "var(--red)", bg: "var(--red-bg)", border: "var(--red-border)" };
-  };
 
   const riskStyle = getRiskStyle(riskLevel);
-  const classStyle = getClassStyle(cgpa);
+  const classStyle = styleForClass(risk?.classification);
+  // Bands for this programme's award type, straight from the API
+  const classBandsData = (risk?.classification_bands || []).map((b) => ({ ...styleForClass(b.label), ...b }));
   const currentBandIdx = classBandsData.findIndex((b) => cgpa >= b.min);
 
   return (
@@ -256,7 +252,7 @@ export default function Risk() {
                 const isYou = i === currentBandIdx;
                 return (
                   <div key={band.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: isYou ? band.bg : "var(--bg-page)", border: "1.5px solid " + (isYou ? band.border : "var(--border)"), borderRadius: "var(--radius-md)", transition: "var(--transition)", position: "relative" }}>
-                    <span style={{ flexShrink: 0 }}>{bandIcons[i]}</span>
+                    <span style={{ flexShrink: 0 }}>{bandIcons[BAND_ICON_INDEX[band.label] ?? i]}</span>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontFamily: "var(--font-heading)", fontWeight: isYou ? 800 : 600, fontSize: 13, color: isYou ? band.color : "var(--text-secondary)", marginBottom: 2 }}>{band.label}</p>
                       <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 11, color: isYou ? band.color : "var(--text-muted)", opacity: isYou ? 1 : 0.7 }}>{band.range}</p>

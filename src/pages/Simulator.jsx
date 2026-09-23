@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { simulateCGPA, getTargetGrade } from "../services/api";
+import { simulateCGPA, getTargetGrade, getErrorMessage } from "../services/api";
 
 const GRADE_OPTIONS = [
   { label: "A — 4.0", value: 4.0 }, { label: "B+ — 3.5", value: 3.5 },
@@ -90,7 +90,7 @@ export default function Simulator() {
       const payload = courses.map((c) => ({ credit_hours: Number(c.credit_hours), grade_point: Number(c.grade_point) }));
       const data = await simulateCGPA({ projected_courses: payload });
       setSimResult(data);
-    } catch (err) { setSimError(err.response?.data?.detail || "Simulation failed. Try again."); }
+    } catch (err) { setSimError(getErrorMessage(err, "Simulation failed. Try again.")); }
     finally { setSimLoading(false); }
   };
 
@@ -100,7 +100,7 @@ export default function Simulator() {
     try {
       const data = await getTargetGrade(parseFloat(targetCgpa), parseInt(remainingCredits));
       setTargetResult(data);
-    } catch (err) { setTargetError(err.response?.data?.detail || "Calculation failed. Try again."); }
+    } catch (err) { setTargetError(getErrorMessage(err, "Calculation failed. Try again.")); }
     finally { setTargetLoading(false); }
   };
 

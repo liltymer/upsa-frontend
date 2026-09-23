@@ -55,6 +55,8 @@ export default function AdminDashboard() {
     "Second Class Upper": { color: "var(--blue)", bg: "var(--blue-bg)" },
     "Second Class Lower": { color: "var(--amber)", bg: "var(--amber-bg)" },
     "Third Class": { color: "var(--orange)", bg: "var(--orange-bg)" },
+    "Distinction": { color: "var(--green)", bg: "var(--green-bg)" },
+    "Credit": { color: "var(--blue)", bg: "var(--blue-bg)" },
     "Pass": { color: "var(--text-muted)", bg: "#F9FAFB" },
     "Fail": { color: "var(--red)", bg: "var(--red-bg)" },
     "No Data": { color: "var(--text-muted)", bg: "#F9FAFB" },

@@ -1,6 +1,10 @@
-import { useState, useEffect } from "react";
-import { getMyResults, addResult, updateResult, deleteResult } from "../services/api";
-import API from "../services/api";
+import { useState, useEffect, useCallback } from "react";
+import { getMyResults, addResult, updateResult, deleteResult, moveResults } from "../services/api";
+import API, { getErrorMessage } from "../services/api";
+import { useProgrammes } from "../context/ProgrammeContext";
+import useReferenceData from "../hooks/useReferenceData";
+import ProgrammeSwitcher from "../components/ProgrammeSwitcher";
+import { gradeClass, semesterTitle, yearsFrom } from "../utils/academic";
 
 const GRADE_OPTIONS = ["A", "B+", "B", "B-", "C+", "C", "C-", "D", "F"];
 const GRADE_POINTS = {
@@ -8,16 +12,10 @@ const GRADE_POINTS = {
   "C+": 2.0, "C": 1.5, "C-": 1.0, "D": 0.5, "F": 0.0,
 };
 
-const gradeClass = (grade) => {
-  if (grade === "A") return "grade-A";
-  if (["B+", "B", "B-"].includes(grade)) return "grade-B";
-  if (["C+", "C"].includes(grade)) return "grade-C";
-  if (grade === "C-") return "grade-C-";
-  if (grade === "D") return "grade-D";
-  return "grade-F";
-};
-
 export default function Results() {
+  const { selected, selectedEnrollmentId, enrollments, hasMultiple, refresh: refreshProgrammes } = useProgrammes();
+  const { academic_years: academicYears } = useReferenceData();
+  const [semesters, setSemesters] = useState([]);
   const [results, setResults] = useState([]);
   const [catalogue, setCatalogue] = useState([]);
   const [studentInfo, setStudentInfo] = useState(null);
@@ -31,7 +29,7 @@ export default function Results() {
   const [form, setForm] = useState({
     course_code: "", course_name: "",
     credit_hours: "3", grade: "",
-    year: "", semester: "",
+    academic_year: "", semester: "",
   });
 
   const showToast = (msg, type = "success") => {
@@ -39,21 +37,23 @@ export default function Results() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     try {
-      const data = await getMyResults();
+      const data = await getMyResults(selectedEnrollmentId);
       setResults(data.results || []);
+      setSemesters(data.semesters || []);
       setStudentInfo({
         student: data.student,
         programme: data.programme,
         level: data.level,
+        enrollment: data.enrollment,
       });
     } catch {
       showToast("Failed to load results.", "error");
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedEnrollmentId]);
 
   const fetchCatalogue = async () => {
     try {
@@ -66,6 +66,9 @@ export default function Results() {
 
   useEffect(() => {
     fetchResults();
+  }, [fetchResults]);
+
+  useEffect(() => {
     fetchCatalogue();
   }, []);
 
@@ -89,7 +92,7 @@ export default function Results() {
   const resetForm = () => {
     setForm({
       course_code: "", course_name: "",
-      credit_hours: "3", grade: "", year: "", semester: "",
+      credit_hours: "3", grade: "", academic_year: "", semester: "",
     });
   };
 
@@ -102,15 +105,17 @@ export default function Results() {
         course_name: form.course_name.trim(),
         credit_hours: Number(form.credit_hours),
         grade: form.grade,
-        year: Number(form.year),
+        academic_year: form.academic_year,
         semester: Number(form.semester),
+        enrollment_id: selected?.id,
       });
       resetForm();
       setShowForm(false);
       await fetchResults();
+      refreshProgrammes();
       showToast("Result added successfully.");
     } catch (err) {
-      showToast(err.response?.data?.detail || "Failed to add result.", "error");
+      showToast(getErrorMessage(err, "Failed to add result."), "error");
     } finally {
       setSubmitting(false);
     }
@@ -125,7 +130,7 @@ export default function Results() {
       await fetchResults();
       showToast("Result updated successfully.");
     } catch (err) {
-      showToast(err.response?.data?.detail || "Failed to update.", "error");
+      showToast(getErrorMessage(err, "Failed to update."), "error");
     }
   };
 
@@ -140,12 +145,27 @@ export default function Results() {
     }
   };
 
-  const grouped = results.reduce((acc, r) => {
-    const key = `Year ${r.year} — Semester ${r.semester}`;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(r);
-    return acc;
-  }, {});
+  // Separate diploma results typed into a degree (or the reverse) — one semester at a time
+  const handleMoveSemester = async (semResults, targetId) => {
+    if (!targetId) return;
+    const target = enrollments.find((e) => e.id === Number(targetId));
+    if (!window.confirm(`Move these ${semResults.length} result(s) to ${target?.programme}?`)) return;
+    try {
+      const data = await moveResults(semResults.map((r) => r.result_id), Number(targetId));
+      await fetchResults();
+      refreshProgrammes();
+      showToast(data.message);
+    } catch (err) {
+      showToast(getErrorMessage(err, "Failed to move results."), "error");
+    }
+  };
+
+  const otherProgrammes = enrollments.filter((e) => e.id !== selected?.id);
+  const selectableYears = yearsFrom(selected?.start_academic_year, academicYears);
+
+  const semesterKey = (s) => `${semesterTitle(s.academic_year, s.semester)} · Level ${s.level}`;
+  const grouped = Object.fromEntries(semesters.map((s) => [semesterKey(s), s.results]));
+  const semesterByKey = Object.fromEntries(semesters.map((s) => [semesterKey(s), s]));
 
   if (loading) return (
     <div className="loading-screen">
@@ -199,8 +219,12 @@ export default function Results() {
                 }}>
                   {results.length} result{results.length !== 1 ? "s" : ""}
                 </span>
+                {studentInfo.enrollment?.status === "completed" && (
+                  <span className="badge badge-navy">Completed programme · corrections allowed</span>
+                )}
               </div>
             )}
+            <ProgrammeSwitcher />
           </div>
 
           <button
@@ -231,6 +255,9 @@ export default function Results() {
                 </h3>
                 <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
                   Enter your course details exactly as shown on your result sheet.
+                  {hasMultiple && selected && (
+                    <> Adding to <strong>{selected.programme}</strong>.</>
+                  )}
                 </p>
               </div>
 
@@ -432,16 +459,16 @@ export default function Results() {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Year</label>
+                    <label className="form-label">Academic Year</label>
                     <select
-                      value={form.year}
-                      onChange={(e) => setForm({ ...form, year: e.target.value })}
+                      value={form.academic_year}
+                      onChange={(e) => setForm({ ...form, academic_year: e.target.value })}
                       required
                       className="form-input form-select"
                     >
                       <option value="">Select year...</option>
-                      {[1, 2, 3, 4].map((y) => (
-                        <option key={y} value={y}>Year {y}</option>
+                      {selectableYears.map((y) => (
+                        <option key={y} value={y}>{y}</option>
                       ))}
                     </select>
                   </div>
@@ -455,8 +482,8 @@ export default function Results() {
                       className="form-input form-select"
                     >
                       <option value="">Select semester...</option>
-                      <option value="1">Semester 1</option>
-                      <option value="2">Semester 2</option>
+                      <option value="1">First Semester</option>
+                      <option value="2">Second Semester</option>
                     </select>
                   </div>
                 </div>
@@ -565,10 +592,10 @@ export default function Results() {
               display: "flex", flexDirection: "column", gap: 20,
             }}>
               {Object.entries(grouped).map(([semester, semResults], gi) => {
-                const semCredits = semResults.reduce((s, r) => s + r.credit_hours, 0);
-                const semPoints = semResults.reduce((s, r) => s + r.grade_point * r.credit_hours, 0);
-                const semGPA = semCredits > 0
-                  ? (semPoints / semCredits).toFixed(2) : "0.00";
+                // GPA comes from the API, which truncates exactly like UPSA
+                const summary = semesterByKey[semester];
+                const semCredits = summary.total_credits;
+                const semGPA = summary.gpa.toFixed(2);
 
                 return (
                   <div
@@ -604,8 +631,22 @@ export default function Results() {
                           color: "rgba(255,255,255,0.4)",
                           fontFamily: "var(--font-heading)",
                         }}>
-                          {semResults.length} course{semResults.length !== 1 ? "s" : ""} · {semCredits} credits
+                          {semResults.length} course{semResults.length !== 1 ? "s" : ""} · {semCredits} credits · CGPA {summary.cgpa.toFixed(2)}
                         </p>
+                        {otherProgrammes.length > 0 && (
+                          <select
+                            aria-label="Move this semester to another programme"
+                            value=""
+                            onChange={(e) => handleMoveSemester(semResults, e.target.value)}
+                            className="form-input form-select"
+                            style={{ marginTop: 8, padding: "4px 28px 4px 10px", fontSize: 11, maxWidth: 260 }}
+                          >
+                            <option value="">Move semester to…</option>
+                            {otherProgrammes.map((prog) => (
+                              <option key={prog.id} value={prog.id}>{prog.programme}</option>
+                            ))}
+                          </select>
+                        )}
                       </div>
                       <div style={{ textAlign: "right" }}>
                         <p style={{

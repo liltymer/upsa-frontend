@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { getTranscript, downloadTranscript } from "../services/api";
+import { useProgrammes } from "../context/ProgrammeContext";
+import ProgrammeSwitcher from "../components/ProgrammeSwitcher";
+import { classStyle as styleForClass, gradeClass } from "../utils/academic";
 
 export default function Transcript() {
+  const { selectedEnrollmentId } = useProgrammes();
   const [transcript, setTranscript] = useState(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -14,8 +18,9 @@ export default function Transcript() {
 
   useEffect(() => {
     const fetchTranscript = async () => {
+      setLoading(true);
       try {
-        const data = await getTranscript();
+        const data = await getTranscript(selectedEnrollmentId);
         setTranscript(data);
       } catch {
         showToast("Failed to load transcript.", "error");
@@ -24,12 +29,15 @@ export default function Transcript() {
       }
     };
     fetchTranscript();
-  }, []);
+  }, [selectedEnrollmentId]);
 
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      await downloadTranscript();
+      await downloadTranscript(
+        selectedEnrollmentId,
+        `transcript_${transcript?.index_number || "programme"}.pdf`
+      );
       showToast("Transcript downloaded successfully!");
     } catch {
       showToast("Failed to download transcript.", "error");
@@ -38,23 +46,6 @@ export default function Transcript() {
     }
   };
 
-  const getClassStyle = (cgpa) => {
-    if (cgpa >= 3.6) return { label: "First Class", color: "var(--green)", bg: "var(--green-bg)", border: "var(--green-border)" };
-    if (cgpa >= 3.0) return { label: "Second Class Upper", color: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue-border)" };
-    if (cgpa >= 2.5) return { label: "Second Class Lower", color: "var(--amber)", bg: "var(--amber-bg)", border: "var(--amber-border)" };
-    if (cgpa >= 2.0) return { label: "Third Class", color: "var(--orange)", bg: "var(--orange-bg)", border: "var(--orange-border)" };
-    if (cgpa >= 1.0) return { label: "Pass", color: "var(--text-muted)", bg: "#F9FAFB", border: "var(--border)" };
-    return { label: "Fail", color: "var(--red)", bg: "var(--red-bg)", border: "var(--red-border)" };
-  };
-
-  const gradeClass = (grade) => {
-    if (grade === "A") return "grade-A";
-    if (["B+", "B", "B-"].includes(grade)) return "grade-B";
-    if (["C+", "C"].includes(grade)) return "grade-C";
-    if (grade === "C-") return "grade-C-";
-    if (grade === "D") return "grade-D";
-    return "grade-F";
-  };
 
   if (loading) return (
     <div className="loading-screen">
@@ -64,7 +55,7 @@ export default function Transcript() {
   );
 
   const cgpa = transcript?.cgpa ?? 0;
-  const classStyle = getClassStyle(cgpa);
+  const classStyle = styleForClass(transcript?.classification || "No results yet");
 
   return (
     <div style={{
@@ -87,6 +78,7 @@ export default function Transcript() {
           <div className="fade-up">
             <p className="page-eyebrow">Academic Records</p>
             <h1 className="page-title">Academic Transcript</h1>
+            <ProgrammeSwitcher />
             <p style={{
               color: "rgba(255,255,255,0.4)",
               fontSize: 13,
@@ -194,7 +186,7 @@ export default function Transcript() {
                       color: "var(--text-secondary)",
                       marginBottom: 2,
                     }}>
-                      Index Number: {transcript.index_number}
+                      Index Number: {transcript.index_number || "not added yet"} · {transcript.period}
                     </p>
                     <p style={{
                       fontSize: 13,
@@ -262,7 +254,7 @@ export default function Transcript() {
                       opacity: 0.7,
                       fontFamily: "var(--font-heading)",
                     }}>
-                      Degree Classification
+                      {transcript.award_type === "diploma" ? "Diploma Classification" : "Degree Classification"}
                     </p>
                   </div>
                 </div>
@@ -301,7 +293,7 @@ export default function Transcript() {
                       fontWeight: 700, fontSize: 15,
                       color: "white", marginBottom: 2,
                     }}>
-                      Year {sem.year} — Semester {sem.semester}
+                      {sem.title} · Level {sem.level}
                     </h3>
                     <p style={{
                       fontSize: 11,
@@ -345,7 +337,7 @@ export default function Transcript() {
                     borderBottom: "1px solid var(--border)",
                   }}
                 >
-                  {["Code", "Course Title", "Credits", "Grade", "Points"].map((h) => (
+                  {["Code", "Course Title", "Credits", "Grade", "Grade Points"].map((h) => (
                     <span key={h} style={{
                       fontFamily: "var(--font-heading)",
                       fontWeight: 700, fontSize: 10,
@@ -411,7 +403,7 @@ export default function Transcript() {
                         fontWeight: 700, fontSize: 13,
                         color: "var(--text-muted)",
                       }}>
-                        {course.grade_point?.toFixed(1)}
+                        {course.grade_value?.toFixed(2)}
                       </span>
                     </div>
 
@@ -467,7 +459,7 @@ export default function Transcript() {
                             fontWeight: 700, fontSize: 12,
                             color: "var(--text-muted)",
                           }}>
-                            {course.grade_point?.toFixed(1)} GP
+                            {course.grade_value?.toFixed(2)} GP
                           </span>
                         </div>
                       </div>
