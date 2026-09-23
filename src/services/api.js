@@ -195,6 +195,16 @@ export const getInsights = async (enrollmentId, remainingCredits) => {
   return response.data;
 };
 
+export const setAreaLabel = async (enrollmentId, code, name) => {
+  const response = await API.put(`/enrollments/${enrollmentId}/area-labels`, { code, name });
+  return response.data;
+};
+
+export const updateMyProfile = async (data) => {
+  const response = await API.put("/students/me", data);
+  return response.data;
+};
+
 export const getActiveAnnouncements = async () => {
   const response = await API.get("/announcements/active");
   return response.data;

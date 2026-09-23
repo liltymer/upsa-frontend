@@ -158,6 +158,7 @@ export default function Profile() {
 
   const [profile, setProfile] = useState(null);
   const [name, setName] = useState("");
+  const [preferredName, setPreferredName] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [toast, setToast] = useState(null);
@@ -176,6 +177,7 @@ export default function Profile() {
       .then((res) => {
         setProfile(res.data);
         setName(res.data.name || "");
+        setPreferredName(res.data.preferred_name || "");
       })
       .catch(() => showToast("Failed to load profile.", "error"))
       .finally(() => setLoading(false));
@@ -205,7 +207,7 @@ export default function Profile() {
     e.preventDefault();
     setBusy("name");
     try {
-      const res = await API.put("/students/me", { name });
+      const res = await API.put("/students/me", { name, preferred_name: preferredName });
       login(token, { ...user, name: res.data.name });
       showToast("Profile updated successfully.");
     } catch (err) {
@@ -285,12 +287,16 @@ export default function Profile() {
               <input className="form-input" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} />
             </div>
             <div className="form-group">
+              <label className="form-label">What should we call you?</label>
+              <input className="form-input" value={preferredName} maxLength={60} onChange={(e) => setPreferredName(e.target.value)} placeholder="e.g. Joshua" />
+            </div>
+            <div className="form-group">
               <label className="form-label">Email Address</label>
               <input className="form-input" value={profile?.email || ""} disabled />
             </div>
             <div>
               <button type="submit" disabled={busy === "name"} className="btn btn-primary">
-                {busy === "name" ? "Saving..." : "Save Name"}
+                {busy === "name" ? "Saving..." : "Save"}
               </button>
             </div>
           </form>

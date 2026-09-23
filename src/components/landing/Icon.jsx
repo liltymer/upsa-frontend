@@ -125,6 +125,12 @@ const PATHS = {
     </>
   ),
   pencil: <path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" />,
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.01" />
+    </>
+  ),
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
 };

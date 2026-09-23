@@ -3,7 +3,7 @@
    ========================================================== */
 
 .ap {
-  --ap-sidebar: 256px;
+  --ap-sidebar: 232px;
   --ap-sidebar-collapsed: 76px;
   --ap-ink: #0b1b3f;
   --ap-body: #45506a;
@@ -259,6 +259,16 @@
     cursor: pointer;
   }
   .ap-more-link.active { color: var(--gold); background: rgba(255, 192, 5, 0.1); }
+}
+
+/* Short or zoomed desktop screens: tighter sidebar */
+@media (min-width: 861px) and (max-height: 820px) {
+  .ap-sidebar { padding: 14px 12px; }
+  .ap-sidebar-top { margin-bottom: 16px; }
+  .ap-nav-link { min-height: 40px; font-size: 14px; }
+  .ap-nav ul { gap: 2px; }
+  .ap-programme { padding: 8px 10px; }
+  .ap-programme-name { font-size: 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
