@@ -234,9 +234,16 @@ export const getTranscript = async (enrollmentId) => {
   return response.data;
 };
 
-export const downloadTranscript = async (enrollmentId, filename = "transcript.pdf") => {
+// Every programme with results, oldest first, each with its own CGPA
+export const getTranscriptHistory = async () => {
+  const response = await API.get("/transcript/history");
+  return response.data;
+};
+
+// scope "all" gives a top-up student's full history in one PDF
+export const downloadTranscript = async (enrollmentId, filename = "transcript.pdf", scope = "programme") => {
   const response = await API.get("/transcript/download", {
-    ...scoped(enrollmentId),
+    ...scoped(enrollmentId, scope === "all" ? { scope } : {}),
     responseType: "blob",
   });
 

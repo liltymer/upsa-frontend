@@ -1,0 +1,146 @@
+/* ==========================================================
+   Transcript page. Prefix tp-. The paper preview mirrors the
+   PDF, so what the student sees is what they download.
+   ========================================================== */
+
+.tp-muted { margin: 0; font-size: 14px; line-height: 1.55; color: var(--db-muted); }
+.tp-small { font-size: 12.5px; }
+
+.tp-scope { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: #e8ecf5; justify-self: start; }
+.tp-scope button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--db-body);
+  cursor: pointer;
+}
+.tp-scope button.on { background: #fff; color: var(--navy); font-weight: 800; box-shadow: 0 1px 3px rgba(8, 28, 70, 0.14); }
+
+.tp-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+.tp-main { min-width: 0; }
+.tp-loading { display: grid; justify-items: center; gap: 12px; padding: 48px; color: var(--db-muted); }
+
+/* ---------- Paper ---------- */
+
+.tp-paper {
+  position: relative;
+  overflow: hidden;
+  padding: 44px 48px 36px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(8, 28, 70, 0.08), 0 18px 48px rgba(8, 28, 70, 0.12);
+  font-family: "Times New Roman", Times, serif;
+  color: #111;
+}
+.tp-watermark {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 800;
+  font-size: clamp(64px, 11vw, 140px);
+  letter-spacing: 0.04em;
+  color: rgba(31, 56, 100, 0.06);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.tp-paper > *:not(.tp-watermark) { position: relative; }
+.tp-paper h2, .tp-paper h3 { font-family: inherit; letter-spacing: 0; }
+.tp-paper-head { text-align: center; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 3px solid #000; }
+.tp-paper-head h2 { margin: 0; font-size: 21px; font-weight: 700; letter-spacing: 0.01em; color: #1f3864; }
+.tp-sub { margin: 4px 0 2px; font-size: 13px; font-weight: 700; }
+.tp-note { margin: 0; font-size: 11.5px; font-style: italic; color: #555; }
+
+.tp-part + .tp-part { margin-top: 28px; padding-top: 18px; border-top: 1px dashed #b8c1d4; }
+.tp-part-title { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: #1f3864; }
+
+.tp-paper table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.tp-paper th, .tp-paper td { border: 1px solid #000; padding: 5px 8px; text-align: center; }
+.tp-info th { width: 18%; font-weight: 700; }
+.tp-info td { width: 32%; }
+
+.tp-sem { margin-top: 14px; break-inside: avoid; }
+.tp-sem h3 { margin: 0 0 5px; text-align: center; font-size: 14px; font-weight: 700; color: #1f3864; }
+.tp-scroll { overflow-x: auto; }
+.tp-courses { min-width: 520px; }
+.tp-courses thead th { background: #1f3864; color: #fff; font-weight: 700; }
+.tp-courses thead th:nth-child(2), .tp-courses td.tp-title { text-align: left; }
+.tp-courses th:first-child { width: 14%; }
+.tp-courses th:nth-child(3) { width: 13%; }
+.tp-courses th:nth-child(4) { width: 10%; }
+.tp-courses th:nth-child(5) { width: 17%; }
+.tp-summary { margin-top: 5px; min-width: 520px; }
+.tp-summary td { background: #dce3ee; font-weight: 700; }
+.tp-foot { margin: 22px 0 0; text-align: center; font-size: 11.5px; font-style: italic; color: #777; }
+
+/* ---------- Side panel ---------- */
+
+.tp-side { display: grid; gap: 16px; position: sticky; top: 20px; }
+.tp-card { padding: 20px; background: #fff; border: 1px solid var(--db-line); border-radius: 16px; }
+.tp-card h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: var(--navy); }
+.tp-card h2 svg { flex-shrink: 0; color: var(--db-gold-ink); }
+.tp-card p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--db-body); }
+.tp-warn { background: #fff8e1; border-color: #f7de8a; }
+.tp-warn h2 svg { color: #b45309; }
+.tp-steps { margin: 10px 0; padding-left: 22px; list-style: decimal outside; display: grid; gap: 8px; font-size: 14px; line-height: 1.5; color: var(--db-body); }
+.tp-steps strong { color: var(--navy); }
+.tp-steps li { padding-left: 2px; }
+.tp-steps li::marker { font-weight: 800; color: var(--navy); }
+.tp-steps a { font-weight: 700; color: var(--db-blue); overflow-wrap: anywhere; }
+.tp-link { margin-top: 12px; width: 100%; justify-content: center; gap: 8px; }
+.tp-checks { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14px; color: var(--db-body); }
+.tp-checks li { position: relative; padding-left: 22px; line-height: 1.45; }
+.tp-checks li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 5px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #22a05a;
+  border-radius: 3px;
+}
+
+/* ---------- Tablets and phones ---------- */
+
+@media (max-width: 1100px) {
+  .tp-layout { grid-template-columns: 1fr; }
+  .tp-side { position: static; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .tp-scope { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .tp-scope button { padding: 0 8px; font-size: 13px; }
+  .tp-paper { padding: 24px 16px 20px; border-radius: 4px; }
+  .tp-paper-head h2 { font-size: 16px; }
+  .tp-info, .tp-info tbody, .tp-info tr { display: block; }
+  .tp-info tr { display: grid; grid-template-columns: 38% 62%; }
+  .tp-info th, .tp-info td { width: auto; margin: -1px 0 0 -1px; }
+}
+
+/* ---------- Print: only the paper ---------- */
+
+@media print {
+  body * { visibility: hidden; }
+  .tp-paper, .tp-paper * { visibility: visible; }
+  .tp-paper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .tp-scroll { overflow: visible; }
+  .tp-watermark { position: fixed; top: 50%; }
+}
