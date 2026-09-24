@@ -1,0 +1,142 @@
+/* ==========================================================
+   Profile page. Prefix pf-. Builds on dashboard and results styles,
+   and reuses the sign-in page's password field.
+   ========================================================== */
+
+.pf, .rs-dialog {
+  --au-ink: #0b1b3f;
+  --au-body: #45506a;
+  --au-muted: #6b7690;
+  --au-line: #e3e8f2;
+  --au-soft: #f4f6fb;
+  --au-error: #b42318;
+}
+.pf .au-field, .rs-dialog .au-field { margin: 0; }
+.pf-hint { margin: 4px 0 0; font-size: 12.5px; color: var(--db-muted); }
+.pf-lead { margin: -6px 0 18px; font-size: 14px; color: var(--db-muted); }
+.pf-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.pf-danger-text { color: #b42318 !important; }
+
+/* ---------- Identity ---------- */
+
+.pf-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 28px;
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 192, 5, 0.16), transparent 55%),
+    linear-gradient(135deg, #081c46 0%, #10306e 100%);
+  box-shadow: 0 12px 32px rgba(8, 28, 70, 0.18);
+  color: #fff;
+}
+.pf-avatar {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--navy);
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 800;
+  box-shadow: 0 0 0 5px rgba(255, 192, 5, 0.18);
+}
+.pf-hero-text { min-width: 0; }
+.pf-hero h2 { margin: 0; font-family: var(--font-heading); font-size: 24px; font-weight: 800; }
+.pf-hero p { margin: 2px 0 10px; color: rgba(255, 255, 255, 0.7); }
+.pf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pf-chips span { padding: 4px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); font-size: 13px; font-weight: 600; }
+.pf-chips .pf-chip-gold { background: var(--gold); color: var(--navy); }
+
+.pf-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.pf-signin { display: flex; align-items: center; gap: 6px; margin: -6px 0 14px; }
+
+/* ---------- Journey timeline ---------- */
+
+.pf-timeline { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; }
+.pf-step { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 14px; }
+.pf-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 32px;
+  bottom: -14px;
+  width: 2px;
+  background: var(--db-line);
+}
+.pf-dot {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e8f6ee;
+  color: #15803d;
+  position: relative;
+  z-index: 1;
+}
+.pf-step.current .pf-dot { background: var(--navy); color: var(--gold); box-shadow: 0 0 0 4px rgba(255, 192, 5, 0.25); }
+.pf-step-card { display: grid; gap: 12px; padding: 16px 18px; border: 1.5px solid var(--db-line); border-radius: 16px; background: #fff; }
+.pf-step.current .pf-step-card { border-color: #f7de8a; background: #fffdf5; }
+.pf-step.review .pf-step-card { border-color: #f4c7c2; }
+.pf-step-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.pf-step-name { display: grid; gap: 3px; min-width: 0; }
+.pf-step-kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--db-gold-ink); }
+.pf-step-name strong { font-family: var(--font-heading); font-size: 17px; color: var(--navy); }
+.pf-step-name > span:last-child { font-size: 13.5px; color: var(--db-muted); }
+.pf-step-score { display: grid; justify-items: end; flex-shrink: 0; }
+.pf-step-score strong { font-family: var(--font-heading); font-size: 28px; font-weight: 800; line-height: 1; color: var(--navy); }
+.pf-step-score span { margin-top: 4px; padding: 2px 10px; border-radius: 999px; background: var(--db-soft); font-size: 12px; font-weight: 700; color: var(--navy); }
+.pf-step-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pf-step-actions .db-btn { gap: 6px; }
+
+.pf-journey-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 20px; }
+.pf-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px dashed #c5cede;
+  border-radius: 14px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  color: var(--navy);
+  cursor: pointer;
+}
+.pf-action:hover { border-color: var(--navy); background: var(--db-soft); }
+.pf-action span { display: grid; gap: 2px; }
+.pf-action strong { font-family: var(--font-heading); font-size: 15px; }
+.pf-action small { font-size: 12.5px; color: var(--db-muted); }
+.pf-action-main { border-style: solid; border-color: transparent; background: var(--gold); }
+.pf-action-main:hover { background: #ffcd33; border-color: transparent; }
+.pf-action-main small { color: rgba(8, 28, 70, 0.7); }
+
+/* ---------- Your data ---------- */
+
+.pf-data { display: grid; gap: 12px; }
+.pf-data-row { display: flex; align-items: center; gap: 16px; padding: 16px 18px; border: 1.5px solid var(--db-line); border-radius: 14px; }
+.pf-data-row > div { flex: 1; min-width: 0; }
+.pf-data-row strong { font-family: var(--font-heading); font-size: 15px; color: var(--navy); }
+.pf-data-row p { margin: 2px 0 0; font-size: 13.5px; color: var(--db-muted); }
+.pf-data-row .db-btn { flex-shrink: 0; }
+.pf-data-icon { width: 42px; height: 42px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--db-soft); color: var(--navy); }
+.pf-data-danger { border-color: #f4c7c2; background: #fffafa; }
+.pf-data-danger .pf-data-icon { background: #fdeceb; color: #b42318; }
+
+@media (max-width: 1000px) {
+  .pf-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .pf-hero { flex-direction: column; align-items: flex-start; padding: 20px; }
+  .pf-step-top { flex-direction: column; }
+  .pf-step-score { justify-items: start; }
+  .pf-data-row { flex-wrap: wrap; }
+  .pf-data-row .db-btn { width: 100%; justify-content: center; }
+}
