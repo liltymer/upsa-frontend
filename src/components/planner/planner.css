@@ -1,0 +1,100 @@
+/* ==========================================================
+   Planner. Prefix pl-. Builds on dashboard, results and GPA styles.
+   ========================================================== */
+
+.pl-muted { margin: 0; font-size: 14px; line-height: 1.55; color: var(--db-muted); }
+.pl-small { font-size: 12.5px; margin-top: 6px; }
+
+.pl-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+
+/* ---------- The plan ---------- */
+
+.pl-plan { display: grid; gap: 16px; }
+.pl-plan-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.pl-plan-head .db-label { margin-bottom: 2px; }
+.pl-plan-head .db-h2 { font-size: 20px; }
+.pl-quick { display: flex; gap: 6px; flex-wrap: wrap; }
+.pl-quick button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1.5px solid var(--db-line);
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  cursor: pointer;
+}
+.pl-quick button:hover { border-color: var(--navy); background: var(--db-soft); }
+
+.pl-rows { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.pl-row { display: grid; gap: 10px; padding: 12px 14px; border: 1.5px solid var(--db-line); border-radius: 14px; background: #fff; }
+.pl-row-top { display: grid; grid-template-columns: minmax(0, 1fr) 92px 40px; gap: 8px; align-items: center; }
+.pl-course { margin: 0; font-size: 15px; line-height: 1.35; color: var(--db-body); }
+.pl-course strong { margin-right: 6px; font-family: var(--font-heading); color: var(--navy); }
+.pl-plan-foot { display: flex; align-items: center; gap: 16px; }
+.pl-plan-foot .rs-add-row { flex: 1; }
+
+/* ---------- Live result (navy, stays in view) ---------- */
+
+.pl-result {
+  position: sticky;
+  top: 20px;
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(255, 192, 5, 0.16), transparent 55%),
+    linear-gradient(160deg, #081c46 0%, #10306e 100%);
+  box-shadow: 0 14px 36px rgba(8, 28, 70, 0.22);
+  color: #fff;
+}
+.pl-result-label { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255, 255, 255, 0.62); }
+.pl-figures { display: grid; grid-template-columns: 1fr 1.3fr; gap: 10px; }
+.pl-figures > div { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); }
+.pl-figures small { font-size: 12px; color: rgba(255, 255, 255, 0.62); }
+.pl-figures strong { display: flex; align-items: center; gap: 6px; font-family: var(--font-heading); font-size: 28px; font-weight: 800; line-height: 1.1; }
+.pl-cgpa strong { color: var(--gold); }
+.pl-before { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, 0.55); }
+.pl-tags { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 24px; }
+.pl-tags .rs-sum-pill { margin: 0; }
+.pl-advice { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.pl-advice li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, 0.86); }
+.pl-advice svg { flex-shrink: 0; margin-top: 3px; color: var(--gold); }
+.pl-advice strong { color: #fff; }
+.pl-note { margin: 0; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 12.5px; color: rgba(255, 255, 255, 0.55); }
+
+/* ---------- Reach a class ---------- */
+
+.pl-target-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.pl-target-grid > div { min-width: 0; }
+.pl .pl-classes { margin: 8px 0 18px; padding: 0; flex-wrap: wrap; overflow: visible; }
+.pl-rem-label { margin-bottom: 6px; }
+.pl-rem { max-width: 180px; }
+.pl-answer { min-height: 150px; padding: 20px; border-radius: 16px; background: var(--db-soft); display: grid; align-content: start; gap: 6px; }
+.pl-answer p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--db-body); }
+.pl-answer strong { color: var(--navy); }
+.pl-answer-label { font-size: 13px !important; font-weight: 700; color: var(--db-muted) !important; }
+.pl-answer-big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-family: var(--font-heading); font-size: 34px !important; font-weight: 800; color: var(--navy) !important; line-height: 1.1 !important; }
+.pl-answer-big span { font-size: 15px; font-weight: 700; color: #8a5a00; }
+.pl-answer-big svg { align-self: center; }
+.pl-ok { color: #15803d !important; font-size: 24px !important; }
+.pl-no { color: #b42318 !important; font-size: 24px !important; }
+
+/* ---------- Tablets and phones ---------- */
+
+@media (max-width: 1000px) {
+  .pl-layout { grid-template-columns: 1fr; }
+  .pl-result { position: static; }
+  .pl-target-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .pl-row-top { grid-template-columns: minmax(0, 1fr) 76px 36px; }
+  .pl-quick { width: 100%; }
+  .pl-quick button { flex: 1; padding: 0 8px; }
+  .pl-figures strong { font-size: 24px; }
+  .pl-answer-big { font-size: 28px !important; }
+}

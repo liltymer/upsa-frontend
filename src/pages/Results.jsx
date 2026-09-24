@@ -10,7 +10,7 @@ import useReferenceData from "../hooks/useReferenceData";
 import {
   addResult, addSemester, deleteResult, getCourses, getErrorMessage, getMyResults, moveResults,
 } from "../services/api";
-import { semesterTitle, yearsFrom } from "../utils/academic";
+import { nextTerm, semesterTitle, yearsFrom } from "../utils/academic";
 
 const FILTERS = [
   { key: "all", label: "All grades", grades: null },
@@ -22,17 +22,6 @@ const FILTERS = [
 
 const termKey = (s) => `${s.academic_year}-${s.semester}`;
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
-/** The semester after the latest one recorded, without going past the current year. */
-function nextTerm(semesters, startYear, years) {
-  const newest = years[0];
-  const last = semesters[semesters.length - 1];
-  if (!last) return { year: startYear && years.includes(startYear) ? startYear : newest, semester: 1 };
-  if (last.semester === 1) return { year: last.academic_year, semester: 2 };
-  const [a, b] = last.academic_year.split("/").map(Number);
-  const following = `${a + 1}/${b + 1}`;
-  return years.includes(following) ? { year: following, semester: 1 } : { year: last.academic_year, semester: 2 };
-}
 
 export default function Results() {
   const { selectedEnrollmentId, enrollments, refresh: refreshProgrammes } = useProgrammes();
