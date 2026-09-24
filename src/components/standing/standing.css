@@ -1,0 +1,101 @@
+/* ==========================================================
+   Standing page. Prefix st-. Builds on dashboard, results and GPA styles.
+   ========================================================== */
+
+.st-muted { margin: 0; font-size: 14px; line-height: 1.55; color: var(--db-muted); }
+
+/* ---------- Status ---------- */
+
+.st-status {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+  padding: 26px 28px;
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 192, 5, 0.16), transparent 55%),
+    linear-gradient(135deg, #081c46 0%, #10306e 100%);
+  box-shadow: 0 12px 32px rgba(8, 28, 70, 0.18);
+  color: #fff;
+}
+.st-status-main { display: flex; gap: 16px; align-items: flex-start; }
+.st-badge {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+}
+.st-good .st-badge { background: rgba(34, 160, 90, 0.2); color: #7ee2a8; }
+.st-warn .st-badge { background: rgba(255, 192, 5, 0.18); color: var(--gold); }
+.st-bad .st-badge { background: rgba(217, 45, 32, 0.22); color: #ffb4a8; }
+.st-label { margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); }
+.st-status h2 { margin: 0 0 6px; font-family: var(--font-heading); font-size: 26px; font-weight: 800; }
+.st-good h2 { color: #7ee2a8; }
+.st-warn h2 { color: var(--gold); }
+.st-bad h2 { color: #ffb4a8; }
+.st-text { margin: 0; font-size: 15px; line-height: 1.55; color: rgba(255, 255, 255, 0.85); }
+.st-figures { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.st-figures > div { display: grid; gap: 2px; padding: 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); }
+.st-figures dt { font-size: 12px; color: rgba(255, 255, 255, 0.62); }
+.st-figures dd { margin: 0; font-family: var(--font-heading); font-size: 26px; font-weight: 800; line-height: 1.1; }
+.st-figures dd small { font-size: 14px; font-weight: 700; color: rgba(255, 255, 255, 0.55); }
+.st-figures span { font-size: 12px; line-height: 1.35; color: rgba(255, 255, 255, 0.6); }
+
+.st-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+
+/* ---------- Failed courses ---------- */
+
+.st-empty { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-weight: 600; color: #15803d; }
+.st-courses { margin: 0 0 14px; padding: 0; list-style: none; display: grid; gap: 8px; }
+.st-course { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1.5px solid var(--db-line); border-radius: 14px; }
+.st-course-failed { border-color: #f4b4ae; background: #fffafa; }
+.st-course-name { display: grid; gap: 2px; font-size: 14px; color: var(--db-body); }
+.st-course-name strong { font-family: var(--font-heading); color: var(--navy); }
+.st-course-name small { font-size: 12.5px; line-height: 1.45; color: var(--db-muted); }
+.st-tag { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.st-tag-failed { background: #fdeceb; color: #b42318; }
+.st-tag-concessionary { background: #fff5d6; color: #8a5a00; }
+.st-tag-cleared { background: #e8f6ee; color: #15803d; }
+.st-note { display: grid; gap: 8px; padding: 14px; border-radius: 12px; background: var(--db-soft); }
+.st-note p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--db-body); }
+.st-note strong { color: var(--navy); }
+
+/* ---------- Graduation checklist ---------- */
+
+.st-checks { margin: 0; padding: 0; list-style: none; display: grid; gap: 16px; }
+.st-checks li { display: grid; gap: 6px; }
+.st-check-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; color: var(--db-body); }
+.st-check-head strong { font-family: var(--font-heading); font-size: 15px; color: var(--navy); white-space: nowrap; }
+.st-checks small { font-size: 12.5px; line-height: 1.45; color: var(--db-muted); }
+.st-bar { height: 10px; border-radius: 5px; background: var(--db-soft); overflow: hidden; }
+.st-bar span { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #22a05a, #34c26f); }
+.st-ok { color: #15803d !important; }
+.st-over { color: #b42318 !important; }
+
+/* ---------- Top-up ---------- */
+
+.st-topup { display: flex; gap: 16px; align-items: flex-start; border: 1.5px solid #f7de8a; background: #fffbeb; }
+.st-topup-icon { width: 48px; height: 48px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: var(--navy); color: var(--gold); }
+.st-topup p { margin: 6px 0 0; font-size: 15px; line-height: 1.55; color: var(--db-body); }
+.st-topup strong { color: var(--navy); }
+.st-topup-btn { margin-top: 12px; gap: 8px; }
+
+.st-rules { margin: 0; padding-left: 18px; display: grid; gap: 10px; font-size: 14.5px; line-height: 1.55; color: var(--db-body); }
+
+/* ---------- Tablets and phones ---------- */
+
+@media (max-width: 1000px) {
+  .st-status, .st-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .st-status { padding: 20px 16px; }
+  .st-status h2 { font-size: 22px; }
+  .st-figures dd { font-size: 22px; }
+  .st-figures > div { padding: 12px 10px; }
+  .st-course { grid-template-columns: auto minmax(0, 1fr); }
+  .st-tag { grid-column: 2; justify-self: start; }
+}
