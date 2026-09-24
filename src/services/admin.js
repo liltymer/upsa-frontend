@@ -5,6 +5,7 @@ const data = (promise) => promise.then((res) => res.data);
 
 export const getAdminStats = () => data(API.get("/admin/stats"));
 export const getAdminAnalytics = () => data(API.get("/admin/analytics"));
+export const getAdminInsights = () => data(API.get("/admin/insights"));
 
 export const getUsers = () => data(API.get("/admin/users"));
 export const deleteUser = (id) => data(API.delete(`/admin/users/${id}`));

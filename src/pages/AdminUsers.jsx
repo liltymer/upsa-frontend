@@ -8,6 +8,16 @@ import { useAuth } from "../context/AuthContext";
 import { getErrorMessage } from "../services/api";
 import { deleteUser, getUsers, setUserRole } from "../services/admin";
 
+// "today", "3 days ago", "12 Mar 2026"
+function ago(iso) {
+  if (!iso) return "Never";
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days} days ago`;
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export default function AdminUsers() {
   const { user: me } = useAuth();
   const [users, setUsers] = useState(null);
@@ -89,6 +99,8 @@ export default function AdminUsers() {
               <tr>
                 <th scope="col">Name</th>
                 <th scope="col">Programmes</th>
+                <th scope="col" className="ad-hide-sm">Joined</th>
+                <th scope="col" className="ad-hide-sm">Last active</th>
                 <th scope="col" className="ad-num ad-hide-sm">Results</th>
                 <th scope="col"><span className="db-sr">Actions</span></th>
               </tr>
@@ -107,6 +119,8 @@ export default function AdminUsers() {
                       </small>
                     )) : <small>No programme</small>}
                   </td>
+                  <td className="ad-hide-sm">{u.joined ? ago(u.joined) : "-"}</td>
+                  <td className="ad-hide-sm">{ago(u.last_active)}</td>
                   <td className="ad-num ad-hide-sm">{u.results_count}</td>
                   <td className="ad-actions">
                     {!(u.index_number === me?.index_number && u.name === me?.name) && (
