@@ -10,7 +10,7 @@ import useReferenceData from "../hooks/useReferenceData";
 import {
   addResult, addSemester, deleteResult, getCourses, getErrorMessage, getMyResults, moveResults,
 } from "../services/api";
-import { classStyle, semesterTitle, yearsFrom } from "../utils/academic";
+import { semesterTitle, yearsFrom } from "../utils/academic";
 
 const FILTERS = [
   { key: "all", label: "All grades", grades: null },
@@ -170,8 +170,7 @@ export default function Results() {
     setOpenKeys(next);
   };
 
-  const cls = enrollment?.classification ? classStyle(enrollment.classification) : null;
-  const others = enrollments.filter((e) => e.id !== enrollment?.id);
+    const others = enrollments.filter((e) => e.id !== enrollment?.id);
   const defaultTerm = nextTerm(semesters, enrollment?.start_academic_year, years);
   const matchCount = shown.reduce((n, s) => n + s.visible.length, 0);
 
@@ -211,26 +210,26 @@ export default function Results() {
         </section>
       ) : (
         <>
-          <section className="rs-stats" aria-label="Summary">
-            <div className="db-card rs-stat">
-              <p className="db-label">CGPA</p>
-              <strong>{enrollment.cgpa.toFixed(2)}</strong>
-              {cls && <span className="db-pill" style={{ color: cls.color, background: cls.bg, borderColor: cls.border }}>{cls.label}</span>}
+          <section className="rs-summary" aria-label="Summary">
+            <div className="rs-sum rs-sum-main">
+              <span className="rs-sum-icon"><Icon name="target" size={22} /></span>
+              <div>
+                <p>CGPA</p>
+                <strong>{enrollment.cgpa.toFixed(2)}</strong>
+                {enrollment.classification && <span className="rs-sum-pill">{enrollment.classification}</span>}
+              </div>
             </div>
-            <div className="db-card rs-stat">
-              <p className="db-label">Credits</p>
-              <strong>{enrollment.total_credits}</strong>
-              <span className="rs-stat-sub">completed</span>
+            <div className="rs-sum">
+              <span className="rs-sum-icon"><Icon name="layers" size={22} /></span>
+              <div><p>Credits completed</p><strong>{enrollment.total_credits}</strong></div>
             </div>
-            <div className="db-card rs-stat">
-              <p className="db-label">Semesters</p>
-              <strong>{semesters.length}</strong>
-              <span className="rs-stat-sub">recorded</span>
+            <div className="rs-sum">
+              <span className="rs-sum-icon"><Icon name="chart" size={22} /></span>
+              <div><p>Semesters recorded</p><strong>{semesters.length}</strong></div>
             </div>
-            <div className="db-card rs-stat">
-              <p className="db-label">Courses</p>
-              <strong>{data.total_results}</strong>
-              <span className="rs-stat-sub">taken</span>
+            <div className="rs-sum">
+              <span className="rs-sum-icon"><Icon name="results" size={22} /></span>
+              <div><p>Courses taken</p><strong>{data.total_results}</strong></div>
             </div>
           </section>
 
@@ -272,6 +271,7 @@ export default function Results() {
                       <span className="rs-sem-title">
                         <strong>{semesterTitle(s.academic_year, s.semester)}</strong>
                         <span>Level {s.level} · {plural(s.results.length, "course")} · {s.total_credits} credits</span>
+                        <GradeStrip results={s.results} />
                       </span>
                       <span className="rs-sem-figures">
                         <span className="rs-sem-gpa">
@@ -391,6 +391,22 @@ export default function Results() {
 
       <Toast toast={toast} onDone={clearToast} />
     </div>
+  );
+}
+
+const GRADE_ORDER = ["A", "B+", "B", "B-", "C+", "C", "C-", "D", "F"];
+const gradeFamily = (g) => (g === "A" ? "a" : g.startsWith("B") ? "b" : g === "C-" ? "cm" : g.startsWith("C") ? "c" : "df");
+
+/** A semester's grades at a glance: one bar per course, widths by credits, best grades first. */
+function GradeStrip({ results }) {
+  const sorted = [...results].sort((x, y) => GRADE_ORDER.indexOf(x.grade) - GRADE_ORDER.indexOf(y.grade));
+  const counts = GRADE_ORDER.map((g) => [g, results.filter((r) => r.grade === g).length]).filter(([, n]) => n);
+  return (
+    <span className="rs-strip" role="img" aria-label={`Grades: ${counts.map(([g, n]) => `${n} ${g}`).join(", ")}`}>
+      {sorted.map((r) => (
+        <span key={r.result_id} className={`rs-strip-${gradeFamily(r.grade)}`} style={{ flexGrow: r.credit_hours }} title={`${r.course_code}: ${r.grade}`} />
+      ))}
+    </span>
   );
 }
 
