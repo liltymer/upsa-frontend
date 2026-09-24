@@ -98,3 +98,84 @@
   .pl-figures strong { font-size: 24px; }
   .pl-answer-big { font-size: 28px !important; }
 }
+
+/* ---------- Predictions ---------- */
+
+.pl-lead { margin-bottom: 14px; }
+.pl-guess { margin: -2px 0 0; font-size: 13px; line-height: 1.45; color: var(--db-muted); }
+.pl-guess strong { color: var(--navy); }
+.pl-watch {
+  margin-right: 8px;
+  vertical-align: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fdeceb;
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 700;
+}
+.pl-row-weak { border-color: #f4c7c2; }
+
+/* ---------- Scenario tables ---------- */
+
+.pl-scen { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pl-scen th, .pl-scen td { padding: 7px 6px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.pl-scen thead th { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255, 255, 255, 0.55); }
+.pl-scen tbody th { font-weight: 600; color: rgba(255, 255, 255, 0.8); }
+.pl-scen td { font-family: var(--font-heading); font-weight: 800; color: #fff; white-space: nowrap; }
+.pl-scen td span { display: block; font-family: var(--font-body); font-size: 11.5px; font-weight: 600; color: rgba(255, 255, 255, 0.6); white-space: normal; }
+.pl-scen tr.mine th, .pl-scen tr.mine td { color: var(--gold); }
+.pl-scen-light th, .pl-scen-light td { border-bottom-color: var(--db-line); }
+.pl-scen-light thead th { color: var(--db-muted); }
+.pl-scen-light tbody th { color: var(--db-body); }
+.pl-scen-light td { color: var(--navy); }
+.pl-scen-light td span { color: var(--db-muted); }
+.pl-scen-light tr.mine { background: #fff8e1; }
+.pl-scen-light tr.mine th, .pl-scen-light tr.mine td { color: var(--navy); }
+
+/* ---------- Effort ---------- */
+
+.pl-effort { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.pl-effort li { display: grid; grid-template-columns: 170px minmax(0, 1fr) 150px; align-items: center; gap: 14px; min-height: 44px; }
+.pl-effort-name { display: grid; line-height: 1.25; }
+.pl-effort-name strong { font-family: var(--font-heading); font-size: 14px; color: var(--navy); }
+.pl-effort-name span { font-size: 12px; color: var(--db-muted); }
+.pl-effort-track { height: 10px; border-radius: 5px; background: var(--db-soft); overflow: hidden; }
+.pl-effort-track span { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #2f5bb7, #4a78d4); }
+.pl-effort-value { justify-self: end; font-size: 13px; color: var(--db-body); white-space: nowrap; }
+.pl-effort-value strong { margin-left: 4px; font-family: var(--font-heading); font-size: 15px; color: #15803d; }
+
+/* ---------- Road to graduation ---------- */
+
+.pl-road .db-chart { margin-top: 20px; }
+.pl-road-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.pl-terms { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 8px; }
+.pl-terms li { display: grid; gap: 8px; padding: 12px 14px; border: 1.5px solid var(--db-line); border-radius: 14px; }
+.pl-term-first { background: var(--db-soft); border-style: dashed !important; }
+.pl-term-name { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.pl-term-name strong { font-family: var(--font-heading); font-size: 14px; color: var(--navy); }
+.pl-term-name span { font-size: 13px; color: var(--db-muted); }
+.pl-term-name b { color: var(--navy); }
+.pl-term-plan { font-size: 13px; font-weight: 600; color: var(--db-body); }
+.pl-terms .rs-grade { height: 34px; min-width: 38px; font-size: 13px; }
+.rs-input.pl-inline { display: inline-block; width: 72px; min-height: 34px; padding: 0 8px; margin: 0 4px; vertical-align: middle; }
+.pl-road-side { display: grid; gap: 14px; }
+.pl-finish { padding: 18px; border-radius: 16px; background: var(--db-soft); display: grid; gap: 6px; }
+.pl-finish p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--db-body); }
+.pl-finish strong { color: var(--navy); }
+.pl-drop { display: flex; gap: 8px; align-items: flex-start; margin-top: 4px !important; padding: 10px 12px; border-radius: 10px; background: #fdeceb; color: #7a1a12 !important; }
+.pl-drop svg { flex-shrink: 0; margin-top: 2px; color: #b42318; }
+.pl-drop strong { color: #7a1a12 !important; }
+
+@media (max-width: 1000px) {
+  .pl-road-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .pl-effort li { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
+  .pl-effort-track { grid-column: 1 / -1; grid-row: 2; }
+  .pl-terms .rs-grades { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; }
+  .pl-terms .rs-grade { min-width: 0; padding: 0; }
+}

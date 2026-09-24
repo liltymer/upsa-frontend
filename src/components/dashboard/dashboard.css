@@ -186,6 +186,7 @@
 .db-legend li { display: inline-flex; align-items: center; gap: 8px; }
 .db-key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
 .db-key-line { width: 16px; height: 3px; border-radius: 2px; }
+.db-key-dash { width: 18px; height: 0; border-top: 3px dashed; border-radius: 0; background: transparent; }
 .db-key-ring { width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 2.5px solid; box-sizing: border-box; }
 .db-chart-area { height: 280px; }
 .db-legend li { white-space: nowrap; }
