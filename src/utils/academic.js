@@ -36,7 +36,11 @@ export const gradeClass = (grade) => {
 export const SEMESTER_NAMES = { 1: "First Semester", 2: "Second Semester" };
 
 export const semesterTitle = (academicYear, semester) =>
-  `${academicYear} — ${SEMESTER_NAMES[semester] || `Semester ${semester}`}`;
+  `${SEMESTER_NAMES[semester] || `Semester ${semester}`} ${academicYear}`;
+
+// UPSA truncates GPAs to two decimals instead of rounding (2.989 is 2.98)
+export const truncateGpa = (points, credits) =>
+  credits ? Math.floor((points / credits) * 100 + 1e-9) / 100 : 0;
 
 export const shortSemester = (academicYear, semester) =>
   `${academicYear.slice(2, 4)}/${academicYear.slice(7, 9)} S${semester}`;
