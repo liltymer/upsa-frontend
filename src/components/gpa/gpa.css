@@ -1,0 +1,191 @@
+/* ==========================================================
+   GPA page. Prefix gp-. Builds on the dashboard (.db) and
+   results (.rs) styles.
+   ========================================================== */
+
+.gp-muted { margin: 0; font-size: 14px; line-height: 1.55; color: var(--db-muted); }
+.gp-note { margin: 14px 0 0; font-size: 13px; color: var(--db-muted); }
+
+/* Summary extras */
+.gp-sum-sub { font-size: 12px; color: rgba(255, 255, 255, 0.62); }
+.gp-delta { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 12px; font-weight: 700; }
+.gp-delta.up { color: #7ee2a8; }
+.gp-delta.down { color: #ffb4a8; }
+.gp .rs-sum > div { display: grid; justify-items: start; gap: 2px; }
+
+/* Bigger chart than on the dashboard */
+.gp-chart .db-chart-area { height: 340px; }
+
+.gp-two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+
+/* ---------- Impact bars (diverging from zero) ---------- */
+
+.gp-impacts { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.gp-impact { display: grid; grid-template-columns: 96px minmax(0, 1fr) 64px; align-items: center; gap: 12px; min-height: 44px; }
+.gp-impact-name { display: grid; line-height: 1.2; }
+.gp-impact-name strong { font-family: var(--font-heading); font-size: 14px; color: var(--navy); }
+.gp-impact-name span { font-size: 12px; color: var(--db-muted); }
+.gp-impact-track { position: relative; height: 14px; border-radius: 7px; background: var(--db-soft); }
+.gp-impact-zero { position: absolute; left: 50%; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 1px; background: #c3cbdb; }
+.gp-impact-bar { position: absolute; top: 0; bottom: 0; min-width: 3px; }
+.gp-impact-bar.up { background: #22a05a; border-radius: 0 7px 7px 0; }
+.gp-impact-bar.down { background: #d92d20; border-radius: 7px 0 0 7px; }
+.gp-impact-bar.flat { background: #9aa4b8; border-radius: 2px; }
+.gp-impact-value { justify-self: end; font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--db-muted); }
+.gp-impact-value.up { color: #15803d; }
+.gp-impact-value.down { color: #b42318; }
+
+/* ---------- Class ladder ---------- */
+
+.gp-ladder { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.gp-ladder li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--db-line);
+  border-radius: 12px;
+  background: #fff;
+}
+.gp-ladder-name { font-family: var(--font-heading); font-weight: 800; font-size: 15px; color: var(--navy); }
+.gp-ladder-range { font-size: 13px; color: var(--db-muted); }
+.gp-ladder li.here { border-color: var(--gold); background: #fff8e1; box-shadow: 0 0 0 3px rgba(255, 192, 5, 0.18); }
+.gp-here {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--navy);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+}
+.gp-next { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0 0; font-size: 14px; line-height: 1.5; color: var(--db-body); }
+.gp-next svg { flex-shrink: 0; margin-top: 2px; color: #15803d; }
+.gp-next strong { color: var(--navy); }
+
+/* ---------- Numbers table ---------- */
+
+.gp-table-wrap { overflow-x: auto; margin: 0 -4px; }
+.gp-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.gp-table th, .gp-table td { padding: 12px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid #eef1f7; }
+.gp-table th:first-child, .gp-table td:last-child, .gp-table thead th:last-child { text-align: left; }
+.gp-table th:last-child, .gp-table td:last-child { padding-left: 24px; }
+.gp-table thead th { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--db-muted); }
+.gp-table tbody th { font-family: var(--font-heading); font-weight: 700; color: var(--navy); }
+.gp-table td { color: var(--db-body); font-variant-numeric: tabular-nums; }
+.gp-table td strong { color: var(--navy); font-family: var(--font-heading); }
+.gp-table tfoot th, .gp-table tfoot td { border-bottom: 0; border-top: 2px solid var(--db-line); background: var(--db-soft); font-weight: 700; color: var(--navy); }
+.gp-table tbody tr:hover { background: #f7f9fd; }
+
+/* ---------- How it is worked out ---------- */
+
+.gp-working { padding: 0; }
+.gp-working-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.gp-working-toggle:hover { background: var(--db-soft); }
+.gp-working-toggle:focus-visible { outline: 2px solid var(--navy); outline-offset: -2px; }
+.gp-chev {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--db-soft);
+  color: var(--navy);
+  transition: transform 0.2s ease;
+}
+.gp-chev.open { transform: rotate(180deg); background: var(--navy); color: var(--gold); }
+.gp-working-body { display: grid; gap: 12px; padding: 0 24px 22px; font-size: 15px; line-height: 1.6; color: var(--db-body); }
+.gp-working-body p { margin: 0; }
+.gp-working-body strong { color: var(--navy); }
+.gp-sums { margin: 0; padding: 0; list-style: none; border: 1px solid var(--db-line); border-radius: 12px; overflow: hidden; }
+.gp-sums li {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) 70px;
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #eef1f7;
+  font-size: 14px;
+}
+.gp-sums li:last-child { border-bottom: 0; }
+.gp-sums li span:first-child { font-family: var(--font-heading); font-weight: 700; color: var(--navy); }
+.gp-sums li strong { justify-self: end; font-variant-numeric: tabular-nums; }
+.gp-sums-total { background: var(--db-soft); font-weight: 700; }
+.gp-formula {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px !important;
+  border-radius: 12px;
+  background: var(--navy);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+}
+.gp-formula strong { color: var(--gold) !important; font-size: 20px; }
+
+/* ---------- Grading scale ---------- */
+
+.gp-scale { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 8px; }
+.gp-scale li { display: grid; justify-items: center; gap: 2px; padding: 12px 6px; border-radius: 12px; }
+.gp-scale strong { font-family: var(--font-heading); font-size: 20px; font-weight: 800; }
+.gp-scale span { font-size: 11px; font-weight: 600; opacity: 0.85; }
+.gp-scale em { font-style: normal; font-family: var(--font-heading); font-size: 14px; font-weight: 800; }
+
+/* ---------- Tablets and phones ---------- */
+
+@media (max-width: 900px) {
+  .gp-two { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .gp-chart .db-chart-area { height: 260px; }
+  .gp-impact { grid-template-columns: 78px minmax(0, 1fr) 54px; gap: 8px; }
+  .gp-scale { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .gp-working-toggle { padding: 16px; }
+  .gp-working-body { padding: 0 16px 18px; font-size: 14px; }
+  .gp-sums li { grid-template-columns: 76px minmax(0, 1fr) 48px; padding: 9px 10px; font-size: 13px; }
+  .gp-here { margin-left: 0; }
+  .gp .rs-sum-pill { white-space: nowrap; font-size: 10px; }
+  .gp-scale span { font-size: 10px; white-space: nowrap; }
+
+  /* Each semester becomes a small card */
+  .gp-table-wrap { overflow: visible; margin: 0; }
+  .gp-table, .gp-table tbody, .gp-table tfoot, .gp-table tr { display: block; }
+  .gp-table thead { display: none; }
+  .gp-table tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--db-line);
+    border-radius: 12px;
+  }
+  .gp-table tbody tr:hover { background: transparent; }
+  .gp-table th, .gp-table td, .gp-table tfoot th, .gp-table tfoot td { padding: 0; border: 0; background: transparent; text-align: left !important; white-space: normal; }
+  .gp-table tr > th { grid-column: 1 / -1; font-size: 15px; }
+  .gp-table td { display: grid; align-content: start; gap: 2px; font-size: 14px; padding-left: 0 !important; }
+  .gp-table td::before { content: attr(data-label); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--db-muted); }
+  .gp-table td.gp-empty { display: none; }
+  .gp-table tfoot tr { background: var(--db-soft); border-color: transparent; margin-bottom: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gp-chev { transition: none; }
+}
