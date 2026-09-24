@@ -220,6 +220,20 @@ export const updateMyProfile = async (data) => {
   return response.data;
 };
 
+export const changePassword = async (currentPassword, newPassword) => {
+  const response = await API.post("/students/me/password", {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+  return response.data;
+};
+
+// Permanently removes the account; needs the password and the word DELETE
+export const deleteMyAccount = async (password) => {
+  const response = await API.delete("/students/me", { data: { password, confirm: "DELETE" } });
+  return response.data;
+};
+
 export const getActiveAnnouncements = async () => {
   const response = await API.get("/announcements/active");
   return response.data;
