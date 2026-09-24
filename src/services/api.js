@@ -147,6 +147,21 @@ export const deleteResult = async (resultId) => {
   return response.data;
 };
 
+// Every course from one result slip; saved all together or not at all
+export const addSemester = async (data) => {
+  const response = await API.post("/results/semester", data);
+  return response.data;
+};
+
+// Courses to pre-fill for a semester of the programme
+export const getCourseSuggestions = async (academicYear, semester, enrollmentId) => {
+  const response = await API.get(
+    "/courses/suggestions",
+    scoped(enrollmentId, { academic_year: academicYear, semester })
+  );
+  return response.data;
+};
+
 export const moveResults = async (resultIds, enrollmentId) => {
   const response = await API.post("/results/move", {
     result_ids: resultIds,
