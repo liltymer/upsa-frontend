@@ -12,7 +12,7 @@ const Results = lazy(() => import("./pages/Results"));
 const GPA = lazy(() => import("./pages/GPA"));
 const Transcript = lazy(() => import("./pages/Transcript"));
 const Planner = lazy(() => import("./pages/Planner"));
-const Risk = lazy(() => import("./pages/Risk"));
+const Standing = lazy(() => import("./pages/Standing"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -124,7 +124,7 @@ export default function App() {
           <Route path="/gpa" element={<GPA />} />
           <Route path="/transcript" element={<Transcript />} />
           <Route path="/planner" element={<Planner />} />
-          <Route path="/standing" element={<Risk />} />
+          <Route path="/standing" element={<Standing />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
         {/* Old addresses keep working */}
