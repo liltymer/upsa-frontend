@@ -276,3 +276,7 @@
   .ap *::before,
   .ap *::after { transition: none !important; animation: none !important; }
 }
+
+/* Admin section in the sidebar */
+.ap-nav-heading { margin: 18px 12px 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 255, 255, 0.45); }
+.ap-nav-rule { display: block; height: 1px; background: rgba(255, 255, 255, 0.15); }
