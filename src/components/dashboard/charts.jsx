@@ -167,3 +167,54 @@ export function GradeSpreadChart({ distribution }) {
     </figure>
   );
 }
+
+function ProjectionTooltip({ active, payload, label, bands }) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0].payload;
+  const planned = row.actual == null;
+  const value = planned ? row.projected : row.actual;
+  if (value == null) return null;
+  return (
+    <div className="db-tooltip">
+      <p className="db-tooltip-title">{label}</p>
+      <p>{planned ? "Planned CGPA" : "CGPA"} <strong>{value.toFixed(2)}</strong></p>
+      <p className="db-tooltip-muted">{bandFor(value, bands)?.label}</p>
+    </div>
+  );
+}
+
+/** Road to graduation: the CGPA so far (solid) and the planned path (dashed), same axis as the trend chart. */
+export function ProjectionChart({ points, bands }) {
+  const values = points.flatMap((p) => [p.actual, p.projected]).filter((v) => v != null);
+  const floor = Math.max(0, Math.floor((Math.min(...values) - 0.3) * 2) / 2);
+  const highest = Math.max(...values);
+  const top = bands.map((b) => b.min).filter((m) => m > highest + 0.1).sort((a, b) => a - b)[0] ?? 4;
+  const bounds = bands.map((b) => b.min).filter((m) => m > floor && m < top);
+  const ticks = [...new Set([floor, ...bounds, top].map((t) => Number(t.toFixed(2))))].sort((a, b) => a - b);
+  const hollow = (color) => ({ r: 4.5, strokeWidth: 2.5, stroke: color, fill: "#fff", strokeDasharray: "0" });
+
+  return (
+    <figure className="db-chart" aria-label="CGPA so far and the planned path to graduation">
+      <ul className="db-legend">
+        <li><span className="db-key db-key-line" style={{ background: SERIES.cgpa }} />Your CGPA so far</li>
+        <li><span className="db-key db-key-dash" style={{ borderColor: SERIES.cgpa }} />Planned path</li>
+      </ul>
+      <div className="db-chart-area">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={points} margin={{ top: 12, right: 18, bottom: 0, left: 0 }}>
+            <CartesianGrid stroke={GRID} strokeDasharray="4 6" vertical={false} />
+            <XAxis dataKey="label" tick={{ fill: AXIS, fontSize: 12 }} tickLine={false} axisLine={false}
+              padding={{ left: 20, right: 20 }} dy={8} interval="preserveStartEnd" />
+            <YAxis domain={[floor, top]} ticks={ticks} interval={0} tick={classTick(bands)} width={112}
+              tickLine={false} axisLine={false} allowDataOverflow />
+            <Tooltip cursor={{ stroke: "#c3cbdb", strokeDasharray: "3 3" }} content={<ProjectionTooltip bands={bands} />} />
+            <Line type="monotone" dataKey="actual" stroke={SERIES.cgpa} strokeWidth={3} connectNulls={false}
+              dot={{ r: 4.5, strokeWidth: 2.5, stroke: SERIES.cgpa, fill: SERIES.cgpa }} isAnimationActive={false} />
+            <Line type="monotone" dataKey="projected" stroke={SERIES.cgpa} strokeWidth={2.5} strokeDasharray="7 6"
+              dot={hollow(SERIES.cgpa)} activeDot={{ r: 6, strokeDasharray: "0" }} isAnimationActive={false} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </figure>
+  );
+}

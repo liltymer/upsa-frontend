@@ -11,7 +11,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Results = lazy(() => import("./pages/Results"));
 const GPA = lazy(() => import("./pages/GPA"));
 const Transcript = lazy(() => import("./pages/Transcript"));
-const Simulator = lazy(() => import("./pages/Simulator"));
+const Planner = lazy(() => import("./pages/Planner"));
 const Risk = lazy(() => import("./pages/Risk"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -123,7 +123,7 @@ export default function App() {
           <Route path="/results" element={<Results />} />
           <Route path="/gpa" element={<GPA />} />
           <Route path="/transcript" element={<Transcript />} />
-          <Route path="/planner" element={<Simulator />} />
+          <Route path="/planner" element={<Planner />} />
           <Route path="/standing" element={<Risk />} />
           <Route path="/profile" element={<Profile />} />
         </Route>

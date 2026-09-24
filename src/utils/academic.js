@@ -55,3 +55,14 @@ export const programmeLabel = (enrollment) => {
 // Academic years from a programme's start up to the newest selectable one
 export const yearsFrom = (startAcademicYear, academicYears = []) =>
   academicYears.filter((y) => !startAcademicYear || y >= startAcademicYear);
+
+/** The semester after the latest one recorded, without going past the current year. */
+export function nextTerm(semesters, startYear, years) {
+  const newest = years[0];
+  const last = semesters[semesters.length - 1];
+  if (!last) return { year: startYear && years.includes(startYear) ? startYear : newest, semester: 1 };
+  if (last.semester === 1) return { year: last.academic_year, semester: 2 };
+  const [a, b] = last.academic_year.split("/").map(Number);
+  const following = `${a + 1}/${b + 1}`;
+  return years.includes(following) ? { year: following, semester: 1 } : { year: last.academic_year, semester: 2 };
+}
