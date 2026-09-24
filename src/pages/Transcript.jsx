@@ -1,607 +1,234 @@
-import { useState, useEffect } from "react";
-import { getTranscript, downloadTranscript } from "../services/api";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import Icon from "../components/landing/Icon";
+import { Toast } from "../components/results/ui";
+import "../components/dashboard/dashboard.css";
+import "../components/results/results.css";
+import "../components/transcript/transcript.css";
 import { useProgrammes } from "../context/ProgrammeContext";
-import ProgrammeSwitcher from "../components/ProgrammeSwitcher";
-import { classStyle as styleForClass, gradeClass } from "../utils/academic";
+import { downloadTranscript, getErrorMessage, getTranscript, getTranscriptHistory } from "../services/api";
+
+const OFFICIAL_PAGE = "https://upsa.edu.gh/academics/academic-affairs/academic-affairs-documents/";
+const TRANSCRIPT_EMAIL = "transcript@upsamail.edu.gh";
+const two = (n) => Number(n).toFixed(2);
+const AWARD = { diploma: "Diploma", degree: "Degree" };
+
+/** One programme laid out exactly like the PDF. */
+function ProgrammeRecord({ record, part, parts }) {
+  return (
+    <div className="tp-part">
+      {parts > 1 && <p className="tp-part-title">Part {part} of {parts}: {AWARD[record.award_type] || "Programme"}</p>}
+      <table className="tp-info">
+        <tbody>
+          <tr>
+            <th scope="row">Name:</th><td>{record.student_name}</td>
+            <th scope="row">Student Number:</th><td>{record.index_number || "-"}</td>
+          </tr>
+          <tr>
+            <th scope="row">Programme:</th><td>{record.programme}</td>
+            <th scope="row">Period:</th><td>{record.period}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {record.transcript.map((sem) => (
+        <section key={`${sem.academic_year}-${sem.semester}`} className="tp-sem">
+          <h3>{sem.title}</h3>
+          <div className="tp-scroll">
+            <table className="tp-courses">
+              <thead>
+                <tr><th scope="col">Code</th><th scope="col">Course Title</th><th scope="col">Credits</th><th scope="col">Grade</th><th scope="col">Grade Points</th></tr>
+              </thead>
+              <tbody>
+                {sem.courses.map((c) => (
+                  <tr key={c.course_code}>
+                    <td>{c.course_code}</td>
+                    <td className="tp-title">{c.course_title}</td>
+                    <td>{two(c.credits)}</td>
+                    <td>{c.grade}</td>
+                    <td>{two(c.grade_value)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <table className="tp-summary">
+              <tbody>
+                <tr>
+                  <td>TCR: {two(sem.total_credits)}</td>
+                  <td>TGP: {two(sem.total_grade_points)}</td>
+                  <td>GPA: {two(sem.semester_gpa)}</td>
+                  <td>CGPA: {two(sem.cgpa)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ))}
+
+      <section className="tp-sem">
+        <h3>{parts > 1 ? `${record.programme}: Cumulative Standing` : "Overall Cumulative Standing"}</h3>
+        <div className="tp-scroll">
+          <table className="tp-summary">
+            <tbody>
+              <tr>
+                <td>Cumulative Credits: {two(record.total_credits)}</td>
+                <td>Cumulative Grade Points: {two(record.total_grade_points)}</td>
+                <td>CGPA: {two(record.cgpa)}</td>
+                <td>Class: {record.classification || "-"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
 
 export default function Transcript() {
-  const { selectedEnrollmentId } = useProgrammes();
-  const [transcript, setTranscript] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { selectedEnrollmentId, enrollments } = useProgrammes();
+  const [scope, setScope] = useState("programme");
+  const [records, setRecords] = useState(null);
+  const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [toast, setToast] = useState(null);
+  const clearToast = useCallback(() => setToast(null), []);
 
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
-  };
+  const multiple = enrollments.filter((e) => (e.total_results ?? 1) > 0).length > 1;
+  const activeScope = multiple ? scope : "programme";
 
   useEffect(() => {
-    const fetchTranscript = async () => {
-      setLoading(true);
-      try {
-        const data = await getTranscript(selectedEnrollmentId);
-        setTranscript(data);
-      } catch {
-        showToast("Failed to load transcript.", "error");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTranscript();
-  }, [selectedEnrollmentId]);
+    let active = true;
+    const load = activeScope === "all"
+      ? getTranscriptHistory().then((d) => d.programmes)
+      : getTranscript(selectedEnrollmentId).then((t) => (t.transcript.length ? [t] : []));
+    load
+      .then((list) => { if (active) { setRecords(list); setError(""); } })
+      .catch((err) => active && setError(getErrorMessage(err, "Could not load your transcript.")));
+    return () => { active = false; };
+  }, [activeScope, selectedEnrollmentId]);
 
-  const handleDownload = async () => {
+  const first = records?.[0];
+  const download = async () => {
     setDownloading(true);
     try {
+      const id = first?.index_number || "programme";
       await downloadTranscript(
         selectedEnrollmentId,
-        `transcript_${transcript?.index_number || "programme"}.pdf`
+        activeScope === "all" ? `transcript_full_history_${id}.pdf` : `transcript_${id}.pdf`,
+        activeScope,
       );
-      showToast("Transcript downloaded successfully!");
-    } catch {
-      showToast("Failed to download transcript.", "error");
+      setToast({ msg: "Transcript downloaded." });
+    } catch (err) {
+      setToast({ msg: getErrorMessage(err, "Could not download the transcript."), type: "error" });
     } finally {
       setDownloading(false);
     }
   };
 
-
-  if (loading) return (
-    <div className="loading-screen">
-      <div className="spinner spinner-lg spinner-dark" />
-      <p>Loading transcript...</p>
-    </div>
-  );
-
-  const cgpa = transcript?.cgpa ?? 0;
-  const classStyle = styleForClass(transcript?.classification || "No results yet");
+  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "var(--bg-page)",
-      fontFamily: "var(--font-body)",
-    }}>
-
-      {/* ================================
-          HEADER
-      ================================ */}
-      <div className="page-header">
-        <div className="header-inner" style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 16,
-          flexWrap: "wrap",
-        }}>
-          <div className="fade-up">
-            <p className="page-eyebrow">Academic Records</p>
-            <h1 className="page-title">Academic Transcript</h1>
-            <ProgrammeSwitcher />
-            <p style={{
-              color: "rgba(255,255,255,0.4)",
-              fontSize: 13,
-            }}>
-              {transcript?.transcript?.length ?? 0} semester{transcript?.transcript?.length !== 1 ? "s" : ""} on record
-            </p>
-          </div>
-
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="btn btn-gold btn-lg fade-up-1"
-            style={{ flexShrink: 0 }}
-          >
-            {downloading ? (
-              <><span className="spinner spinner-dark" />Downloading...</>
-            ) : "⬇ Download PDF"}
-          </button>
+    <div className="db rs tp">
+      <header className="db-header tp-no-print">
+        <div>
+          <p className="db-eyebrow">Transcript</p>
+          <h1 className="db-title">Your unofficial transcript</h1>
+          <p className="db-meta">A copy of your record in UPSA's transcript layout, built from the results you entered.</p>
         </div>
-      </div>
-
-      {/* ================================
-          CONTENT
-      ================================ */}
-      <div className="overlap-section" style={{ paddingBottom: 60 }}>
-
-        {!transcript || transcript.transcript?.length === 0 ? (
-          <div className="card" style={{
-            textAlign: "center", padding: "60px 40px",
-          }}>
-            <p style={{ fontSize: 48, marginBottom: 16 }}>📄</p>
-            <h3 style={{
-              fontFamily: "var(--font-heading)",
-              fontWeight: 700, fontSize: 18,
-              color: "var(--navy)", marginBottom: 8,
-            }}>
-              No transcript yet
-            </h3>
-            <p style={{
-              color: "var(--text-muted)", fontSize: 14,
-              lineHeight: 1.6,
-            }}>
-              Add your semester results to generate your academic transcript.
-            </p>
-          </div>
-        ) : (
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 20,
-          }}>
-
-            {/* ================================
-                STUDENT INFO CARD
-            ================================ */}
-            <div className="card fade-up">
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 20,
-                flexWrap: "wrap",
-              }}>
-
-                {/* Left — student info */}
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 16,
-                }}>
-                  {/* Logo */}
-                  <div style={{
-                    width: 60, height: 60,
-                    borderRadius: "var(--radius-md)",
-                    background: "var(--navy)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: 8,
-                    flexShrink: 0,
-                    overflow: "hidden",
-                  }}>
-                    <img
-                      src="/upsa-logo.png"
-                      alt="UPSA"
-                      style={{
-                        width: "100%", height: "100%",
-                        objectFit: "contain",
-                        filter: "brightness(1.2)",
-                      }}
-                      onError={(e) => { e.target.style.display = "none"; }}
-                    />
-                  </div>
-
-                  <div>
-                    <h2 style={{
-                      fontFamily: "var(--font-heading)",
-                      fontWeight: 800, fontSize: 20,
-                      color: "var(--navy)", marginBottom: 4,
-                    }}>
-                      {transcript.student_name}
-                    </h2>
-                    <p style={{
-                      fontSize: 13,
-                      color: "var(--text-secondary)",
-                      marginBottom: 2,
-                    }}>
-                      Index Number: {transcript.index_number || "not added yet"} · {transcript.period}
-                    </p>
-                    <p style={{
-                      fontSize: 13,
-                      color: "var(--text-muted)",
-                    }}>
-                      University of Professional Studies, Accra
-                    </p>
-                    {transcript.programme && (
-                      <p style={{
-                        fontSize: 12,
-                        color: "var(--text-muted)",
-                        marginTop: 2,
-                      }}>
-                        {transcript.programme}
-                        {transcript.level ? ` · Level ${transcript.level}` : ""}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right — CGPA + Classification */}
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 20,
-                  flexWrap: "wrap",
-                }}>
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{
-                      fontSize: 10, fontWeight: 700,
-                      color: "var(--text-muted)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.12em",
-                      fontFamily: "var(--font-heading)",
-                      marginBottom: 4,
-                    }}>
-                      Final CGPA
-                    </p>
-                    <p style={{
-                      fontFamily: "var(--font-heading)",
-                      fontWeight: 900, fontSize: 40,
-                      color: "var(--navy)", lineHeight: 1,
-                    }}>
-                      {cgpa.toFixed(2)}
-                    </p>
-                  </div>
-                  <div style={{
-                    background: classStyle.bg,
-                    border: `1.5px solid ${classStyle.border}`,
-                    borderRadius: "var(--radius-md)",
-                    padding: "14px 20px",
-                    textAlign: "center",
-                  }}>
-                    <p style={{
-                      fontFamily: "var(--font-heading)",
-                      fontWeight: 800, fontSize: 15,
-                      color: classStyle.color,
-                      marginBottom: 2,
-                    }}>
-                      {classStyle.label}
-                    </p>
-                    <p style={{
-                      fontSize: 11,
-                      color: classStyle.color,
-                      opacity: 0.7,
-                      fontFamily: "var(--font-heading)",
-                    }}>
-                      {transcript.award_type === "diploma" ? "Diploma Classification" : "Degree Classification"}
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            {/* ================================
-                SEMESTER TABLES
-            ================================ */}
-            {transcript.transcript.map((sem, si) => (
-              <div
-                key={si}
-                className={`fade-up-${Math.min(si + 1, 5)}`}
-                style={{
-                  background: "var(--bg-card)",
-                  borderRadius: "var(--radius-lg)",
-                  border: "1.5px solid var(--border)",
-                  overflow: "hidden",
-                  boxShadow: "var(--shadow-md)",
-                }}
-              >
-                {/* Semester header */}
-                <div style={{
-                  background: "linear-gradient(135deg, var(--navy), var(--navy-mid))",
-                  padding: "16px 24px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: 8,
-                }}>
-                  <div>
-                    <h3 style={{
-                      fontFamily: "var(--font-heading)",
-                      fontWeight: 700, fontSize: 15,
-                      color: "white", marginBottom: 2,
-                    }}>
-                      {sem.title} · Level {sem.level}
-                    </h3>
-                    <p style={{
-                      fontSize: 11,
-                      color: "rgba(255,255,255,0.4)",
-                      fontFamily: "var(--font-heading)",
-                    }}>
-                      {sem.courses?.length} course{sem.courses?.length !== 1 ? "s" : ""}
-                      {" · "}
-                      {sem.courses?.reduce((s, c) => s + c.credits, 0)} credits
-                    </p>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{
-                      fontSize: 10, fontWeight: 700,
-                      color: "rgba(255,255,255,0.4)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      fontFamily: "var(--font-heading)",
-                      marginBottom: 2,
-                    }}>
-                      Semester GPA
-                    </p>
-                    <p style={{
-                      fontFamily: "var(--font-heading)",
-                      fontWeight: 900, fontSize: 24,
-                      color: "var(--gold)",
-                    }}>
-                      {sem.semester_gpa?.toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Table header — desktop */}
-                <div
-                  className="transcript-table-header"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "100px 1fr 100px 80px 80px",
-                    padding: "10px 24px",
-                    background: "var(--bg-page)",
-                    borderBottom: "1px solid var(--border)",
-                  }}
-                >
-                  {["Code", "Course Title", "Credits", "Grade", "Grade Points"].map((h) => (
-                    <span key={h} style={{
-                      fontFamily: "var(--font-heading)",
-                      fontWeight: 700, fontSize: 10,
-                      color: "var(--text-muted)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                    }}>
-                      {h}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Course rows */}
-                {sem.courses?.map((course, ci) => (
-                  <div key={ci}>
-                    {/* Desktop row */}
-                    <div
-                      className="transcript-row"
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "100px 1fr 100px 80px 80px",
-                        padding: "14px 24px",
-                        alignItems: "center",
-                        borderBottom: ci < sem.courses.length - 1
-                          ? "1px solid #F5F7FF" : "none",
-                        transition: "background 0.15s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "#FAFBFF";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "transparent";
-                      }}
-                    >
-                      <span style={{
-                        fontFamily: "var(--font-heading)",
-                        fontWeight: 800, fontSize: 12,
-                        color: "var(--navy)",
-                      }}>
-                        {course.course_code}
-                      </span>
-                      <span style={{
-                        fontSize: 13,
-                        color: "var(--text-secondary)",
-                        fontWeight: 500,
-                        paddingRight: 16,
-                      }}>
-                        {course.course_title}
-                      </span>
-                      <span style={{
-                        fontSize: 13,
-                        color: "var(--text-muted)",
-                        fontFamily: "var(--font-heading)",
-                        fontWeight: 600,
-                      }}>
-                        {course.credits} cr
-                      </span>
-                      <span className={`grade-pill ${gradeClass(course.grade)}`}>
-                        {course.grade}
-                      </span>
-                      <span style={{
-                        fontFamily: "var(--font-heading)",
-                        fontWeight: 700, fontSize: 13,
-                        color: "var(--text-muted)",
-                      }}>
-                        {course.grade_value?.toFixed(2)}
-                      </span>
-                    </div>
-
-                    {/* Mobile card */}
-                    <div
-                      className="transcript-mobile-card"
-                      style={{
-                        display: "none",
-                        padding: "14px 16px",
-                        borderBottom: ci < sem.courses.length - 1
-                          ? "1px solid var(--border)" : "none",
-                      }}
-                    >
-                      <div style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                      }}>
-                        <div style={{ flex: 1, paddingRight: 12 }}>
-                          <p style={{
-                            fontFamily: "var(--font-heading)",
-                            fontWeight: 800, fontSize: 12,
-                            color: "var(--navy)", marginBottom: 2,
-                          }}>
-                            {course.course_code}
-                          </p>
-                          <p style={{
-                            fontSize: 13,
-                            color: "var(--text-secondary)",
-                            lineHeight: 1.4,
-                            marginBottom: 2,
-                          }}>
-                            {course.course_title}
-                          </p>
-                          <p style={{
-                            fontSize: 11,
-                            color: "var(--text-muted)",
-                          }}>
-                            {course.credits} credit hours
-                          </p>
-                        </div>
-                        <div style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-end",
-                          gap: 4,
-                        }}>
-                          <span className={`grade-pill ${gradeClass(course.grade)}`}>
-                            {course.grade}
-                          </span>
-                          <span style={{
-                            fontFamily: "var(--font-heading)",
-                            fontWeight: 700, fontSize: 12,
-                            color: "var(--text-muted)",
-                          }}>
-                            {course.grade_value?.toFixed(2)} GP
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                ))}
-
-                {/* Semester footer */}
-                <div
-                  className="transcript-footer"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "100px 1fr 100px 80px 80px",
-                    padding: "12px 24px",
-                    background: "var(--bg-page)",
-                    borderTop: "2px solid var(--border)",
-                  }}
-                >
-                  <span />
-                  <span style={{
-                    fontFamily: "var(--font-heading)",
-                    fontWeight: 700, fontSize: 12,
-                    color: "var(--navy)",
-                  }}>
-                    Semester Total
-                  </span>
-                  <span style={{
-                    fontFamily: "var(--font-heading)",
-                    fontWeight: 700, fontSize: 12,
-                    color: "var(--navy)",
-                  }}>
-                    {sem.courses?.reduce((s, c) => s + c.credits, 0)} cr
-                  </span>
-                  <span style={{
-                    fontFamily: "var(--font-heading)",
-                    fontWeight: 700, fontSize: 11,
-                    color: "var(--text-muted)",
-                  }}>
-                    GPA
-                  </span>
-                  <span style={{
-                    fontFamily: "var(--font-heading)",
-                    fontWeight: 900, fontSize: 14,
-                    color: "var(--gold)",
-                    background: "var(--navy)",
-                    padding: "4px 8px",
-                    borderRadius: 6,
-                    textAlign: "center",
-                    display: "inline-block",
-                  }}>
-                    {sem.semester_gpa?.toFixed(2)}
-                  </span>
-                </div>
-
-              </div>
-            ))}
-
-            {/* ================================
-                CGPA FOOTER
-            ================================ */}
-            <div
-              className="card-dark fade-up-5"
-              style={{ borderRadius: "var(--radius-lg)" }}
-            >
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: 16,
-              }}>
-                <div>
-                  <p style={{
-                    fontSize: 10, fontWeight: 700,
-                    color: "rgba(255,255,255,0.4)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.15em",
-                    fontFamily: "var(--font-heading)",
-                    marginBottom: 4,
-                  }}>
-                    Cumulative Grade Point Average
-                  </p>
-                  <p style={{
-                    fontFamily: "var(--font-heading)",
-                    fontWeight: 700, fontSize: 15,
-                    color: "rgba(255,255,255,0.7)",
-                  }}>
-                    {transcript.student_name} · {transcript.index_number}
-                  </p>
-                </div>
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 20,
-                }}>
-                  <span style={{
-                    background: classStyle.bg,
-                    border: `1px solid ${classStyle.border}`,
-                    color: classStyle.color,
-                    fontFamily: "var(--font-heading)",
-                    fontWeight: 700, fontSize: 13,
-                    padding: "8px 18px",
-                    borderRadius: "var(--radius-full)",
-                  }}>
-                    {classStyle.label}
-                  </span>
-                  <p style={{
-                    fontFamily: "var(--font-heading)",
-                    fontWeight: 900, fontSize: 44,
-                    color: "var(--gold)", lineHeight: 1,
-                  }}>
-                    {cgpa.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
+        {records?.length > 0 && (
+          <div className="rs-head-actions">
+            <button type="button" className="db-btn db-btn-ghost" onClick={() => window.print()}>
+              <Icon name="document" size={18} /> Print
+            </button>
+            <button type="button" className="db-btn" onClick={download} disabled={downloading}>
+              <Icon name="arrowDown" size={18} /> {downloading ? "Preparing..." : "Download PDF"}
+            </button>
           </div>
         )}
-      </div>
+      </header>
 
-      {/* Toast */}
-      {toast && (
-        <div className={`toast ${toast.type === "error" ? "toast-error" : "toast-success"}`}>
-          {toast.type === "error" ? "❌" : "✅"} {toast.msg}
+      {multiple && (
+        <div className="tp-scope tp-no-print" role="radiogroup" aria-label="What to include">
+          {[["programme", "This programme"], ["all", "Full history"]].map(([key, label]) => (
+            <button key={key} type="button" role="radio" aria-checked={activeScope === key}
+              className={activeScope === key ? "on" : ""} onClick={() => { setRecords(null); setScope(key); }}>
+              {label}
+            </button>
+          ))}
         </div>
       )}
 
-      <style>{`
-        @media (max-width: 640px) {
-          .transcript-table-header { display: none !important; }
-          .transcript-row { display: none !important; }
-          .transcript-footer { display: none !important; }
-          .transcript-mobile-card { display: block !important; }
-        }
-        @media (min-width: 641px) {
-          .transcript-row { display: grid !important; }
-          .transcript-mobile-card { display: none !important; }
-        }
-      `}</style>
+      <div className="tp-layout">
+        <div className="tp-main">
+          {error && !records && (
+            <div className="db-card rs-empty"><p className="rs-error" role="alert"><Icon name="alert" size={18} /> {error}</p></div>
+          )}
+          {!records && !error && <div className="db-card tp-loading"><div className="db-spinner" /><p>Loading your transcript...</p></div>}
+          {records?.length === 0 && (
+            <section className="db-card rs-empty">
+              <span className="rs-empty-icon"><Icon name="document" size={28} /></span>
+              <h2 className="db-h2">Nothing to show yet</h2>
+              <p className="tp-muted">Your transcript builds itself from your results. Add a semester and it will appear here, ready to download.</p>
+              <Link to="/results" className="db-btn"><Icon name="plus" size={18} /> Add results</Link>
+            </section>
+          )}
+          {records?.length > 0 && (
+            <article className="tp-paper" aria-label="Transcript preview">
+              <span className="tp-watermark" aria-hidden="true">UNOFFICIAL</span>
+              <header className="tp-paper-head">
+                <h2>UNIVERSITY OF PROFESSIONAL STUDIES, ACCRA</h2>
+                <p className="tp-sub">UNOFFICIAL TRANSCRIPT OF ACADEMIC RECORD</p>
+                <p className="tp-note">Student copy generated by GradeIQ UPSA. Not issued or verified by the university.</p>
+              </header>
+              {records.map((r, i) => <ProgrammeRecord key={r.enrollment_id} record={r} part={i + 1} parts={records.length} />)}
+              <p className="tp-foot">
+                TCR: total credits. TGP: total grade points. GPA and CGPA are cut off after two decimals, not rounded.
+                Printed on {today}.
+              </p>
+            </article>
+          )}
+        </div>
 
+        <aside className="tp-side tp-no-print">
+          <section className="tp-card tp-warn">
+            <h2><Icon name="alert" size={18} /> This is not an official transcript</h2>
+            <p>
+              It is built from results you typed in, and UPSA has not checked it. Use it to review your record,
+              plan, or share informally. Employers, scholarships and other schools will ask for the official one.
+            </p>
+          </section>
+
+          <section className="tp-card">
+            <h2><Icon name="document" size={18} /> Getting your official transcript</h2>
+            <p className="tp-muted">From UPSA's Academic Affairs Directorate:</p>
+            <ol className="tp-steps">
+              <li>Pay the transcript fee at <strong>Access Bank</strong> or on the <strong>UFIS</strong> platform.</li>
+              <li>In UFIS, disburse the payment to <strong>transcript</strong>.</li>
+              <li>Print the disbursement statement from UFIS.</li>
+              <li>Email it to <a href={`mailto:${TRANSCRIPT_EMAIL}`}>{TRANSCRIPT_EMAIL}</a>.</li>
+              <li>You get an email when it is ready, usually within <strong>three working days</strong>.</li>
+            </ol>
+            <p className="tp-muted tp-small">
+              The fee was GH₵30 per set when we last checked. Fees and steps can change, so confirm on UPSA's page first.
+            </p>
+            <a className="db-btn db-btn-ghost tp-link" href={OFFICIAL_PAGE} target="_blank" rel="noreferrer">
+              UPSA procedures page <Icon name="arrowRight" size={16} />
+            </a>
+          </section>
+
+          <section className="tp-card">
+            <h2><Icon name="check" size={18} /> Before you rely on it</h2>
+            <ul className="tp-checks">
+              <li>Every semester on your result slips is here.</li>
+              <li>Codes, titles and credits match your slips.</li>
+              <li>Your GPA and CGPA match the student portal.</li>
+            </ul>
+            <Link to="/results" className="db-link">Fix something in Results</Link>
+          </section>
+        </aside>
+      </div>
+
+      <Toast toast={toast} onDone={clearToast} />
     </div>
   );
 }
