@@ -168,6 +168,21 @@ export function GradeSpreadChart({ distribution }) {
   );
 }
 
+function ProjectionTooltip({ active, payload, label, bands }) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0].payload;
+  const planned = row.actual == null;
+  const value = planned ? row.projected : row.actual;
+  if (value == null) return null;
+  return (
+    <div className="db-tooltip">
+      <p className="db-tooltip-title">{label}</p>
+      <p>{planned ? "Planned CGPA" : "CGPA"} <strong>{value.toFixed(2)}</strong></p>
+      <p className="db-tooltip-muted">{bandFor(value, bands)?.label}</p>
+    </div>
+  );
+}
+
 /** Road to graduation: the CGPA so far (solid) and the planned path (dashed), same axis as the trend chart. */
 export function ProjectionChart({ points, bands }) {
   const values = points.flatMap((p) => [p.actual, p.projected]).filter((v) => v != null);
@@ -192,9 +207,7 @@ export function ProjectionChart({ points, bands }) {
               padding={{ left: 20, right: 20 }} dy={8} interval="preserveStartEnd" />
             <YAxis domain={[floor, top]} ticks={ticks} interval={0} tick={classTick(bands)} width={112}
               tickLine={false} axisLine={false} allowDataOverflow />
-            <Tooltip cursor={{ stroke: "#c3cbdb", strokeDasharray: "3 3" }}
-              formatter={(v, name) => [Number(v).toFixed(2), name === "actual" ? "CGPA" : "Planned CGPA"]}
-              labelStyle={{ fontWeight: 700, color: INK }} />
+            <Tooltip cursor={{ stroke: "#c3cbdb", strokeDasharray: "3 3" }} content={<ProjectionTooltip bands={bands} />} />
             <Line type="monotone" dataKey="actual" stroke={SERIES.cgpa} strokeWidth={3} connectNulls={false}
               dot={{ r: 4.5, strokeWidth: 2.5, stroke: SERIES.cgpa, fill: SERIES.cgpa }} isAnimationActive={false} />
             <Line type="monotone" dataKey="projected" stroke={SERIES.cgpa} strokeWidth={2.5} strokeDasharray="7 6"
