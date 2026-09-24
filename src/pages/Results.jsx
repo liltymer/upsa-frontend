@@ -221,15 +221,15 @@ export default function Results() {
             </div>
             <div className="rs-sum">
               <span className="rs-sum-icon"><Icon name="layers" size={22} /></span>
-              <div><p>Credits completed</p><strong>{enrollment.total_credits}</strong></div>
+              <div><p>Credits</p><strong>{enrollment.total_credits}</strong></div>
             </div>
             <div className="rs-sum">
               <span className="rs-sum-icon"><Icon name="chart" size={22} /></span>
-              <div><p>Semesters recorded</p><strong>{semesters.length}</strong></div>
+              <div><p>Semesters</p><strong>{semesters.length}</strong></div>
             </div>
             <div className="rs-sum">
               <span className="rs-sum-icon"><Icon name="results" size={22} /></span>
-              <div><p>Courses taken</p><strong>{data.total_results}</strong></div>
+              <div><p>Courses</p><strong>{data.total_results}</strong></div>
             </div>
           </section>
 

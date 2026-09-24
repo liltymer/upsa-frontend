@@ -492,10 +492,27 @@
 @media (max-width: 640px) {
   .rs-head-actions { width: 100%; }
   .rs-head-actions .db-btn { flex: 1; justify-content: center; }
-  .rs-sum { flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px; }
-  .rs-sum-icon { width: 36px; height: 36px; border-radius: 10px; }
-  .rs-sum strong { font-size: 24px; }
-  .rs-sum-main strong { font-size: 28px; }
+  /* Compact summary: icon beside the figure */
+  .rs-sum { gap: 10px; padding: 14px; }
+  .rs-sum-icon { width: 34px; height: 34px; border-radius: 10px; }
+  .rs-sum-icon svg { width: 18px; height: 18px; }
+  .rs-sum p { font-size: 11px; }
+  .rs-sum strong { font-size: 22px; }
+  .rs-sum-main strong { font-size: 24px; }
+  .rs-sum-pill { font-size: 11px; padding: 2px 8px; }
+
+  /* Grade filters: one row that scrolls sideways */
+  .rs-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -16px;
+    padding: 0 16px 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .rs-filters::-webkit-scrollbar { display: none; }
+  .rs-filters button { flex-shrink: 0; min-height: 38px; }
+  .rs-toolbar { gap: 10px; }
   .rs-strip { width: 140px; }
   .rs-sem-toggle { gap: 10px; padding: 10px 6px; }
   .rs-sem-title strong { font-size: 15px; }
