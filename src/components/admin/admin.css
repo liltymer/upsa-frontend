@@ -126,3 +126,62 @@
   .ad-funnel { flex-direction: column; align-items: stretch; }
   .ad-funnel > svg { align-self: center; transform: rotate(90deg); }
 }
+
+/* ---------- Students page ---------- */
+
+.ad-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.ad-tiles > div { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: center; padding: 16px 18px; border-radius: 16px; background: #fff; border: 1px solid var(--db-line); box-shadow: 0 1px 2px rgba(8, 28, 70, 0.04); }
+.ad-tile-icon { grid-row: span 2; width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--db-soft); color: var(--navy); }
+.ad-t-green { background: #e8f6ee; color: #15803d; }
+.ad-t-blue { background: #eaf0fb; color: #2f5bb7; }
+.ad-t-gold { background: #fff5d6; color: #8a5a00; }
+.ad-t-navy { background: var(--navy); color: var(--gold); }
+.ad-tiles strong { font-family: var(--font-heading); font-size: 24px; font-weight: 800; line-height: 1.1; color: var(--navy); }
+.ad-tiles small { font-size: 12.5px; color: var(--db-muted); }
+
+.ad-users tbody tr.ad-row { cursor: pointer; }
+.ad-users td { padding-top: 14px; padding-bottom: 14px; }
+.ad-person { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+.ad-person > div { min-width: 0; }
+.ad-person strong { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ad-avatar { width: 40px; height: 40px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #eaf0fb; color: #2f5bb7; font-family: var(--font-heading); font-weight: 800; font-size: 14px; }
+.ad-avatar.admin { background: var(--navy); color: var(--gold); }
+.ad-you { padding: 1px 8px; border-radius: 999px; background: #fff5d6; color: #8a5a00; font-size: 11px; font-weight: 700; }
+
+.ad-progs { display: flex; flex-wrap: wrap; gap: 6px; }
+.ad-prog { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--db-soft); font-size: 12.5px; color: var(--db-body); }
+.ad-prog b { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.ad-prog.degree b { background: #eaf0fb; color: #2f5bb7; }
+.ad-prog.diploma b { background: #fff5d6; color: #8a5a00; }
+.ad-prog > span { font-weight: 600; color: var(--navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-prog em { font-style: normal; color: var(--db-muted); }
+.ad-prog i { font-style: normal; font-size: 11px; font-weight: 700; color: #15803d; }
+.ad-prog.done { opacity: 0.8; }
+
+.ad-active { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--db-body); white-space: nowrap; }
+.ad-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.ad-dot.live { background: #22a05a; box-shadow: 0 0 0 3px rgba(34, 160, 90, 0.18); }
+.ad-dot.recent { background: #e0a100; }
+.ad-dot.idle { background: #9aa4b8; }
+.ad-dot.none { background: transparent; border: 1.5px solid #9aa4b8; }
+
+.ad-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ad-legend-dots { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0 0; font-size: 12.5px; color: var(--db-muted); }
+.ad-legend-dots > span { display: inline-flex; align-items: center; gap: 6px; }
+.ad-empty { display: flex; align-items: center; gap: 8px; justify-content: center; padding: 32px 0; color: var(--db-muted); }
+
+.ad-facts { margin: 0 0 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ad-facts > div { padding: 12px 14px; border-radius: 12px; background: var(--db-soft); }
+.ad-facts dt { font-size: 12px; font-weight: 700; color: var(--db-muted); }
+.ad-facts dd { margin: 2px 0 0; font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: var(--navy); }
+
+@media (max-width: 1100px) {
+  .ad-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .ad-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ad-person { min-width: 0; }
+}
+.ad-users td small { white-space: nowrap; }
+.ad .ad-toolbar select.rs-input { flex: 0 1 220px; min-width: 150px; }
+.ad .ad-toolbar .rs-search { flex: 1 1 240px; }
