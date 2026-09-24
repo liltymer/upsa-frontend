@@ -60,7 +60,6 @@
 .st-tag-failed { background: #fdeceb; color: #b42318; }
 .st-tag-concessionary { background: #fff5d6; color: #8a5a00; }
 .st-tag-cleared { background: #e8f6ee; color: #15803d; }
-.st-note { display: grid; gap: 8px; padding: 14px; border-radius: 12px; background: var(--db-soft); }
 .st-note p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--db-body); }
 .st-note strong { color: var(--navy); }
 
@@ -76,20 +75,84 @@
 .st-ok { color: #15803d !important; }
 .st-over { color: #b42318 !important; }
 
+/* ---------- Clean record ---------- */
+
+.st-clean {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 26px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #e8f6ee 0%, #f3fbf6 100%);
+  border: 1.5px solid #b9e4c9;
+}
+.st-clean-icon { width: 52px; height: 52px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: #22a05a; color: #fff; box-shadow: 0 8px 20px rgba(34, 160, 90, 0.3); }
+.st-clean h2 { margin: 0 0 2px; font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #14532d; }
+.st-clean p { margin: 0; font-size: 15px; color: #1f5f3a; }
+
+/* ---------- Graduation tiles ---------- */
+
+.st-count-good { background: #e8f6ee !important; color: #15803d !important; }
+.st-count-bad { background: #fdeceb !important; color: #b42318 !important; }
+.st-count { padding: 4px 12px; border-radius: 999px; background: var(--db-soft); font-size: 13px; font-weight: 700; color: var(--navy); white-space: nowrap; }
+.st-tiles { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.st-tile { display: flex; flex-direction: column; gap: 6px; padding: 18px; border: 1.5px solid var(--db-line); border-radius: 16px; background: #fff; }
+.st-tile-icon { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; margin-bottom: 4px; }
+.st-blue { background: #eaf0fb; color: #2f5bb7; }
+.st-gold { background: #fff5d6; color: #8a5a00; }
+.st-green { background: #e8f6ee; color: #15803d; }
+.st-red { background: #fdeceb; color: #b42318; }
+.st-navy { background: var(--navy); color: var(--gold); }
+.st-tile-label { margin: 0; font-size: 13px; font-weight: 700; color: var(--db-muted); }
+.st-tile-value { margin: 0; font-family: var(--font-heading); font-size: 28px; font-weight: 800; line-height: 1.1; color: var(--navy); }
+.st-tile-value small { font-size: 14px; font-weight: 700; color: var(--db-muted); }
+.st-tile-note { margin: 2px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--db-muted); }
+.st-bar { height: 8px; border-radius: 4px; background: var(--db-soft); overflow: hidden; }
+.st-bar span { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #22a05a, #34c26f); }
+.st-bar-gold span { background: linear-gradient(90deg, #e0a100, #ffc005); }
+.st-ok { color: #15803d !important; }
+.st-over { color: #b42318 !important; }
+
 /* ---------- Top-up ---------- */
 
-.st-topup { display: flex; gap: 16px; align-items: flex-start; border: 1.5px solid #f7de8a; background: #fffbeb; }
-.st-topup-icon { width: 48px; height: 48px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: var(--navy); color: var(--gold); }
-.st-topup p { margin: 6px 0 0; font-size: 15px; line-height: 1.55; color: var(--db-body); }
+.st-topup {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 26px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff8e1 0%, #fffdf5 100%);
+  border: 1.5px solid #f7de8a;
+}
+.st-topup-icon { width: 52px; height: 52px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: var(--navy); color: var(--gold); }
+.st-topup-body { flex: 1; min-width: 0; }
+.st-topup h2 { margin: 0 0 4px; font-family: var(--font-heading); font-size: 19px; font-weight: 800; color: var(--navy); }
+.st-topup p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--db-body); }
 .st-topup strong { color: var(--navy); }
-.st-topup-btn { margin-top: 12px; gap: 8px; }
+.st-topup .db-btn { gap: 8px; flex-shrink: 0; }
 
-.st-rules { margin: 0; padding-left: 18px; display: grid; gap: 10px; font-size: 14.5px; line-height: 1.55; color: var(--db-body); }
+/* ---------- Rules ---------- */
+
+.st-rules { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.st-rule { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 14px; background: var(--db-soft); }
+.st-rule-icon { width: 36px; height: 36px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: #fff; color: var(--navy); box-shadow: 0 1px 2px rgba(8, 28, 70, 0.08); }
+.st-rule p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--db-body); }
+.st-rule-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px !important; }
+.st-rule-head strong { font-family: var(--font-heading); font-size: 15px; color: var(--navy); }
+.st-rule-head span { padding: 2px 8px; border-radius: 999px; background: #fff; font-size: 11px; font-weight: 700; color: var(--db-gold-ink); white-space: nowrap; }
+.st-source { margin-top: 14px; font-size: 12.5px; }
+
+.st-note { display: flex; gap: 10px; align-items: flex-start; padding: 14px; border-radius: 12px; background: var(--db-soft); }
+.st-note svg { flex-shrink: 0; margin-top: 2px; color: var(--navy); }
 
 /* ---------- Tablets and phones ---------- */
 
+@media (max-width: 1100px) {
+  .st-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .st-rules { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 1000px) {
-  .st-status, .st-grid { grid-template-columns: 1fr; }
+  .st-status { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .st-status { padding: 20px 16px; }
@@ -98,4 +161,6 @@
   .st-figures > div { padding: 12px 10px; }
   .st-course { grid-template-columns: auto minmax(0, 1fr); }
   .st-tag { grid-column: 2; justify-self: start; }
+  .st-tiles, .st-rules { grid-template-columns: 1fr; }
+  .st-clean, .st-topup { flex-direction: column; align-items: flex-start; padding: 20px; }
 }

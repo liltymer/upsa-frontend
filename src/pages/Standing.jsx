@@ -13,6 +13,15 @@ import {
   graduationRule, probationSemesters, topUpLevel,
 } from "../utils/upsaRules";
 
+const RULES = [
+  { icon: "arrowUp", title: "Progression", section: "4.16", text: "You need a CGPA of at least 1.00 to move from one semester to the next." },
+  { icon: "alert", title: "Probation", section: "4.19", text: "Below 1.00 at the end of a semester means probation: two semesters at Level 100, one at Level 200 and above. Still below 1.00 after it means withdrawal." },
+  { icon: "layers", title: "Trailing", section: "4.16", text: "Trail at most two failed courses at a time, for up to three semesters. Prerequisites cannot be trailed." },
+  { icon: "swap", title: "Repeating", section: "4.16, 4.10", text: "A course can be repeated only once, and both attempts count in your FCGPA." },
+  { icon: "check", title: "Graduation", section: "4.15", text: "Diploma: 60 credits passed. Degree: 120, 99 or 69 by entry level. Limited D passes, nothing below C- in internship or dissertation." },
+  { icon: "target", title: "Top-up entry", section: "2.24", text: "A diploma FCGPA of 2.50 or more means Level 300. 1.00 to 2.49 means Level 200." },
+];
+
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const termKey = (r) => `${r.academic_year}-${r.semester}`;
 
@@ -42,7 +51,6 @@ export default function Standing() {
   const { selectedEnrollmentId, enrollments } = useProgrammes();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
-  const [showRules, setShowRules] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -133,6 +141,9 @@ export default function Standing() {
     };
   }
 
+  const hasIssues = trailing.length + concessionary.length + cleared.length > 0;
+  // Credits still to earn is normal mid-programme; only real problems count
+  const toWatch = [concessionaryCredits > rule.concessionary, cgpa < PROGRESSION_CGPA].filter(Boolean).length;
   const degree = enrollments.find((e) => e.award_type === "degree");
   const topUp = award === "diploma" ? topUpLevel(cgpa) : null;
 
@@ -145,7 +156,7 @@ export default function Standing() {
         <div className="st-status-main">
           <span className="st-badge"><Icon name={state.key === "good" ? "check" : "alert"} size={22} strokeWidth={2.4} /></span>
           <div>
-            <p className="st-label">{enrollment.programme} · {enrollment.level_label}</p>
+            <p className="st-label">{enrollment.programme} · {enrollment.completed ? "Completed" : `Level ${level}`}</p>
             <h2 id="st-state">{state.title}</h2>
             <p className="st-text">{state.text}</p>
           </div>
@@ -157,8 +168,8 @@ export default function Standing() {
         </dl>
       </section>
 
-      <div className="st-grid">
-        {/* ---------- Failed courses ---------- */}
+      {/* ---------- Failed courses (or a clean record) ---------- */}
+      {hasIssues ? (
         <section className="db-card" aria-labelledby="st-failed">
           <div className="db-card-head">
             <h2 id="st-failed" className="db-h2">
@@ -166,127 +177,140 @@ export default function Standing() {
               Failed courses and re-sits
             </h2>
           </div>
-          {!trailing.length && !concessionary.length && !cleared.length ? (
-            <p className="st-empty"><Icon name="check" size={18} strokeWidth={2.4} /> No failed courses. Nothing to re-sit.</p>
-          ) : (
-            <ul className="st-courses">
-              {[...trailing, ...concessionary, ...cleared].map((c) => (
-                <li key={c.code} className={`st-course st-course-${c.status}`}>
-                  <span className={`rs-grade-chip rs-g-${c.last.grade.replace("+", "p").replace("-", "m")}`}>{c.last.grade}</span>
-                  <span className="st-course-name">
-                    <strong>{c.code}</strong> {c.name}
-                    <small>
-                      {c.status === "failed" && <>Failed in {semesterTitle(c.last.academic_year, c.last.semester)}. {c.attempts.length > MAX_REPEATS
-                        ? "Already repeated once, the most UPSA allows."
-                        : c.since ? `Trailing for ${plural(c.since, "semester")} of the ${TRAIL_SEMESTERS} allowed.` : `Clear it within ${TRAIL_SEMESTERS} semesters.`}</>}
-                      {c.status === "concessionary" && <>Concessionary pass. Counts toward your limit and can be re-sat to improve it.</>}
-                      {c.status === "cleared" && <>Cleared on a later attempt. Both attempts count in your CGPA.</>}
-                    </small>
-                  </span>
-                  <span className={`st-tag st-tag-${c.status}`}>
-                    {c.status === "failed" ? "To clear" : c.status === "concessionary" ? "Concessionary" : "Cleared"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {(trailing.length > 0 || concessionary.length > 0) && <div className="st-note">
-            <p>
-              <strong>Re-sits.</strong>{" "}
-              {finalYear
-                ? `As a final-year student you can register for supplementary re-sits: up to ${RESIT.maxCredits} credit hours (${RESIT.maxCourses} courses), GH₵${RESIT.feePerCredit} per credit hour in 2025/2026.`
-                : "Re-write a failed course when it is next offered in the right semester (handbook 4.32). Supplementary re-sits are only for final-year students."}
-            </p>
-            <a href={RESIT_URL} target="_blank" rel="noreferrer" className="db-link">UPSA re-sit guidelines</a>
-          </div>}
-        </section>
-
-        {/* ---------- Graduation checklist ---------- */}
-        <section className="db-card" aria-labelledby="st-grad">
-          <div className="db-card-head">
-            <h2 id="st-grad" className="db-h2">
-              <span className="db-h2-icon" aria-hidden="true"><Icon name="check" size={16} /></span>
-              Graduation checklist
-            </h2>
-          </div>
-          <ul className="st-checks">
-            <li>
-              <div className="st-check-head">
-                <span>Credits passed</span>
-                <strong>{creditsPassed} / {rule.minPassed}</strong>
-              </div>
-              <span className="st-bar" aria-hidden="true"><span style={{ width: `${Math.min(100, (creditsPassed / rule.minPassed) * 100)}%` }} /></span>
-              <small>The minimum for {award === "diploma" ? "a diploma" : `a degree entered at Level ${enrollment.entry_level}`} (handbook 4.15).</small>
-            </li>
-            <li>
-              <div className="st-check-head">
-                <span>Concessionary passes (D)</span>
-                <strong className={concessionaryCredits > rule.concessionary ? "st-over" : ""}>{concessionaryCredits} / {rule.concessionary} credits</strong>
-              </div>
-              <small>
-                {rule.concessionary
-                  ? `UPSA allows up to ${rule.concessionary} credits of D${award === "degree" ? ", only at Level 100 and not in core courses" : ""}.`
-                  : "No concessionary passes are allowed for your entry level, so a D has to be re-sat."}
-              </small>
-            </li>
-            <li>
-              <div className="st-check-head"><span>Progression</span><strong className={cgpa < PROGRESSION_CGPA ? "st-over" : "st-ok"}>{cgpa >= PROGRESSION_CGPA ? "Met" : "Not met"}</strong></div>
-              <small>A CGPA of at least 1.00 at the end of every semester (handbook 4.16).</small>
-            </li>
-            <li>
-              <div className="st-check-head"><span>Internship and dissertation</span><strong>C- or better</strong></div>
-              <small>No grade below C- is accepted in these, even as a concessionary pass.</small>
-            </li>
+          <ul className="st-courses">
+            {[...trailing, ...concessionary, ...cleared].map((c) => (
+              <li key={c.code} className={`st-course st-course-${c.status}`}>
+                <span className={`rs-grade-chip rs-g-${c.last.grade.replace("+", "p").replace("-", "m")}`}>{c.last.grade}</span>
+                <span className="st-course-name">
+                  <strong>{c.code}</strong> {c.name}
+                  <small>
+                    {c.status === "failed" && <>Failed in {semesterTitle(c.last.academic_year, c.last.semester)}. {c.attempts.length > MAX_REPEATS
+                      ? "Already repeated once, the most UPSA allows."
+                      : c.since ? `Trailing for ${plural(c.since, "semester")} of the ${TRAIL_SEMESTERS} allowed.` : `Clear it within ${TRAIL_SEMESTERS} semesters.`}</>}
+                    {c.status === "concessionary" && <>Concessionary pass. Counts toward your limit and can be re-sat to improve it.</>}
+                    {c.status === "cleared" && <>Cleared on a later attempt. Both attempts count in your CGPA.</>}
+                  </small>
+                </span>
+                <span className={`st-tag st-tag-${c.status}`}>
+                  {c.status === "failed" ? "To clear" : c.status === "concessionary" ? "Concessionary" : "Cleared"}
+                </span>
+              </li>
+            ))}
           </ul>
-        </section>
-      </div>
-
-      {/* ---------- Top-up guidance ---------- */}
-      {award === "diploma" && (
-        <section className="db-card st-topup" aria-labelledby="st-topup">
-          <span className="st-topup-icon"><Icon name="arrowUp" size={24} strokeWidth={2.2} /></span>
-          <div>
-            <h2 id="st-topup" className="db-h2">Topping up to a degree</h2>
-            {topUp ? (
+          {(trailing.length > 0 || concessionary.length > 0) && (
+            <div className="st-note">
+              <Icon name="info" size={18} />
               <p>
-                With a diploma FCGPA of <strong>{cgpa.toFixed(2)}</strong> you qualify for <strong>Level {topUp}</strong> of a related
-                bachelor's degree at UPSA{topUp === 300 ? " (2.50 or more)" : " (1.00 to 2.49; 2.50 or more would mean Level 300)"}. Handbook 2.24.
+                <strong>Re-sits.</strong>{" "}
+                {finalYear
+                  ? `As a final-year student you can register for supplementary re-sits: up to ${RESIT.maxCredits} credit hours (${RESIT.maxCourses} courses), GH₵${RESIT.feePerCredit} per credit hour in 2025/2026.`
+                  : "Re-write a failed course when it is next offered in the right semester (handbook 4.32). Supplementary re-sits are only for final-year students."}
+                {" "}<a href={RESIT_URL} target="_blank" rel="noreferrer" className="db-link">UPSA re-sit guidelines</a>
               </p>
-            ) : (
-              <p>A diploma FCGPA of at least 1.00 is needed to top up to a degree.</p>
-            )}
-            {degree
-              ? <p className="st-muted">You have already added {degree.programme}. Switch to it from the sidebar.</p>
-              : topUp && <Link to="/profile" className="db-btn db-btn-ghost st-topup-btn">Add my top-up <Icon name="arrowRight" size={16} /></Link>}
+            </div>
+          )}
+        </section>
+      ) : (
+        <section className="st-clean" aria-label="Failed courses">
+          <span className="st-clean-icon"><Icon name="check" size={26} strokeWidth={2.6} /></span>
+          <div>
+            <h2>Clean record</h2>
+            <p>All {plural(courses.length, "course")} passed on the first attempt. Nothing to re-sit, nothing trailing.</p>
           </div>
         </section>
       )}
 
+      {/* ---------- Graduation checklist ---------- */}
+      <section className="db-card" aria-labelledby="st-grad">
+        <div className="db-card-head">
+          <h2 id="st-grad" className="db-h2">
+            <span className="db-h2-icon" aria-hidden="true"><Icon name="check" size={16} /></span>
+            Graduation checklist
+          </h2>
+          <span className={`st-count${toWatch ? " st-count-bad" : " st-count-good"}`}>{toWatch ? `${toWatch} to watch` : "All on track"}</span>
+        </div>
+        <ul className="st-tiles">
+          <li className="st-tile">
+            <span className="st-tile-icon st-blue"><Icon name="layers" size={20} /></span>
+            <p className="st-tile-label">Credits passed</p>
+            <p className="st-tile-value">{creditsPassed}<small> / {rule.minPassed}</small></p>
+            <span className="st-bar" aria-hidden="true"><span style={{ width: `${Math.min(100, (creditsPassed / rule.minPassed) * 100)}%` }} /></span>
+            <p className="st-tile-note">
+              {creditsPassed >= rule.minPassed ? "Minimum reached. " : `${rule.minPassed - creditsPassed} more to go. `}
+              The minimum for {award === "diploma" ? "a diploma" : `a Level ${enrollment.entry_level} entry degree`} (4.15).
+            </p>
+          </li>
+          <li className="st-tile">
+            <span className={`st-tile-icon ${concessionaryCredits > rule.concessionary ? "st-red" : "st-gold"}`}><Icon name="alert" size={20} /></span>
+            <p className="st-tile-label">Concessionary passes (D)</p>
+            <p className={`st-tile-value${concessionaryCredits > rule.concessionary ? " st-over" : ""}`}>{concessionaryCredits}<small> / {rule.concessionary} credits</small></p>
+            {rule.concessionary > 0 && (
+              <span className="st-bar st-bar-gold" aria-hidden="true"><span style={{ width: `${Math.min(100, (concessionaryCredits / rule.concessionary) * 100)}%` }} /></span>
+            )}
+            <p className="st-tile-note">
+              {rule.concessionary
+                ? `Up to ${rule.concessionary} credits of D${award === "degree" ? ", only at Level 100 and not in core courses" : ""}.`
+                : "None allowed for your entry level, so a D has to be re-sat."}
+            </p>
+          </li>
+          <li className="st-tile">
+            <span className={`st-tile-icon ${cgpa >= PROGRESSION_CGPA ? "st-green" : "st-red"}`}><Icon name="arrowUp" size={20} /></span>
+            <p className="st-tile-label">Progression</p>
+            <p className={`st-tile-value ${cgpa >= PROGRESSION_CGPA ? "st-ok" : "st-over"}`}>{cgpa >= PROGRESSION_CGPA ? "Met" : "Not met"}</p>
+            <p className="st-tile-note">A CGPA of at least 1.00 at the end of every semester (4.16). Yours is {cgpa.toFixed(2)}.</p>
+          </li>
+          <li className="st-tile">
+            <span className="st-tile-icon st-navy"><Icon name="document" size={20} /></span>
+            <p className="st-tile-label">Internship and dissertation</p>
+            <p className="st-tile-value">C-<small> or better</small></p>
+            <p className="st-tile-note">No grade below C- is accepted in these, even as a concessionary pass.</p>
+          </li>
+        </ul>
+      </section>
+
+      {/* ---------- Top-up guidance ---------- */}
+      {award === "diploma" && (
+        <section className="st-topup" aria-labelledby="st-topup">
+          <span className="st-topup-icon"><Icon name="arrowUp" size={24} strokeWidth={2.2} /></span>
+          <div className="st-topup-body">
+            <h2 id="st-topup">Topping up to a degree</h2>
+            {topUp ? (
+              <p>
+                With a diploma FCGPA of <strong>{cgpa.toFixed(2)}</strong> you qualify for <strong>Level {topUp}</strong> of a related
+                bachelor's degree at UPSA{topUp === 300 ? " (2.50 or more)" : " (1.00 to 2.49; 2.50 or more would mean Level 300)"}.
+              </p>
+            ) : (
+              <p>A diploma FCGPA of at least 1.00 is needed to top up to a degree.</p>
+            )}
+            {degree && <p className="st-muted">You have already added {degree.programme}. Switch to it from the sidebar.</p>}
+          </div>
+          {topUp && !degree && <Link to="/profile" className="db-btn">Add my top-up <Icon name="arrowRight" size={16} /></Link>}
+        </section>
+      )}
+
       {/* ---------- Rules at a glance ---------- */}
-      <section className="db-card gp-working" aria-labelledby="st-rules">
-        <button type="button" className="gp-working-toggle" aria-expanded={showRules} onClick={() => setShowRules(!showRules)}>
-          <span className="db-h2" id="st-rules">
+      <section className="db-card" aria-labelledby="st-rules">
+        <div className="db-card-head">
+          <h2 id="st-rules" className="db-h2">
             <span className="db-h2-icon" aria-hidden="true"><Icon name="document" size={16} /></span>
             UPSA rules at a glance
-          </span>
-          <span className={`gp-chev${showRules ? " open" : ""}`}><Icon name="chevronDown" size={18} /></span>
-        </button>
-        {showRules && (
-          <div className="gp-working-body">
-            <ul className="st-rules">
-              <li><strong>Progression (4.16).</strong> You need a CGPA of at least 1.00 to move from one semester to the next.</li>
-              <li><strong>Probation (4.19).</strong> A CGPA below 1.00 at the end of a semester means probation: two semesters at Level 100, one at Level 200 and above. Still below 1.00 at the end of it means withdrawal. At Level 100, a CGPA below 1.00 at the end of the first year means withdrawal.</li>
-              <li><strong>Trailing (4.16).</strong> You can trail at most two failed courses at a time, for up to three semesters. Prerequisite courses cannot be trailed.</li>
-              <li><strong>Repeating (4.16, 4.10).</strong> A course can be repeated only once, and both attempts count in your FCGPA.</li>
-              <li><strong>Graduation (4.15).</strong> Diploma: 60 credits passed. Degree: 120 (Level 100 entry), 99 (Level 200) or 69 (Level 300). Concessionary D passes are limited, and nothing below C- in internship or dissertation.</li>
-              <li><strong>Top-up (2.24).</strong> Diploma FCGPA 2.50 or more: Level 300. 1.00 to 2.49: Level 200.</li>
-            </ul>
-            <p className="st-muted">
-              From UPSA's Undergraduate Students' Handbook (2018) and the 2025/2026 re-sit guidelines. Rules can change, so check the
-              {" "}<a href={HANDBOOK_URL} target="_blank" rel="noreferrer" className="db-link">current handbook</a> or your department when it matters.
-            </p>
-          </div>
-        )}
+          </h2>
+          <a href={HANDBOOK_URL} target="_blank" rel="noreferrer" className="db-link">Students' handbook</a>
+        </div>
+        <ul className="st-rules">
+          {RULES.map((r) => (
+            <li key={r.title} className="st-rule">
+              <span className="st-rule-icon"><Icon name={r.icon} size={18} /></span>
+              <div>
+                <p className="st-rule-head"><strong>{r.title}</strong><span>{r.section}</span></p>
+                <p>{r.text}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="st-muted st-source">
+          From UPSA's Undergraduate Students' Handbook (2018) and the 2025/2026 re-sit guidelines. Rules can change, so check the current handbook or your department when it matters.
+        </p>
       </section>
     </div>
   );
