@@ -26,16 +26,16 @@ export const HERO = {
   titleLead: "Know where you stand academically,",
   titleEmphasis: "while there is still time to act.",
   body:
-    "Record your results each semester and GradeIQ tracks your GPA and CGPA on the official UPSA scale. See which semesters and courses are lifting or pulling down your grade, how close you are to the next class, and what you need in the semesters ahead to reach your goal.",
+    "Add a whole semester in seconds and GradeIQ tracks your GPA and CGPA on the official UPSA scale. See which semesters and courses are lifting or pulling down your grade, how close you are to the next class, and plan the grades you need all the way to graduation.",
   primaryCta: "Create an account",
   secondaryCta: "Sign in",
   proof: "Checked against a UPSA transcript: semester GPAs and CGPA match to two decimal places.",
 };
 
 export const FACTS = [
-  { value: "A to F", label: "Official UPSA grade points, 4.0 to 0.0" },
-  { value: "2 scales", label: "Degree and diploma classifications" },
-  { value: "2 d.p.", label: "GPA shown the way UPSA transcripts print it" },
+  { value: "384", label: "UPSA courses ready to pick, from the official timetables" },
+  { value: "2 scales", label: "Degree and diploma classes, applied to the right programme" },
+  { value: "2 d.p.", label: "GPA cut off the way UPSA transcripts print it" },
   { value: "Free", label: "No payment for UPSA students" },
 ];
 
@@ -49,33 +49,33 @@ export const FEATURES_INTRO = {
 export const FEATURES = [
   {
     icon: "results",
-    title: "A complete semester record",
-    body: "Every course, credit hour and grade in one place, grouped by academic year and semester, with the GPA for each semester.",
+    title: "Add a semester in seconds",
+    body: "Pick the semester on your result slip and its usual courses fill in from UPSA's own timetables. Tap one grade per course and see your new GPA before you save.",
   },
   {
     icon: "chart",
-    title: "Trends over time",
-    body: "See whether your GPA is improving or declining from one semester to the next, and which semesters pulled your CGPA down.",
+    title: "Your GPA, explained",
+    body: "Follow your GPA and CGPA over time, see how much each semester raised or lowered your CGPA, and check the working behind every figure.",
+  },
+  {
+    icon: "target",
+    title: "Plan your way to graduation",
+    body: "Expected grades start from your own history. Map every remaining semester, compare best, likely and worst cases, and see which courses move your CGPA most.",
+  },
+  {
+    icon: "shield",
+    title: "Your standing, by UPSA's rules",
+    body: "Probation, failed courses you are trailing, repeat limits and the credits you need to graduate, checked against the UPSA students' handbook.",
   },
   {
     icon: "ladder",
     title: "Early warnings",
-    body: "Know your current class and how far you are from the next one. Your dashboard warns you when your CGPA is in a lower band or close to probation.",
-  },
-  {
-    icon: "target",
-    title: "Target grade planner",
-    body: "Set a target CGPA and see the average grade you need in your remaining credits, and whether the target is still achievable.",
-  },
-  {
-    icon: "layers",
-    title: "What-if simulator",
-    body: "Try the grades you expect in coming courses and see the effect on your CGPA before the results are out.",
+    body: "Know your current class and how far you are from the next one, and get told in time if a plan would slip you into a lower class.",
   },
   {
     icon: "document",
-    title: "Transcript PDF",
-    body: "Download an unofficial transcript laid out like the UPSA one, with TCR, TGP, GPA and CGPA for every semester.",
+    title: "Transcript and next steps",
+    body: "Download an unofficial transcript laid out like UPSA's, including your full diploma and degree history, with the steps for requesting the official one.",
   },
 ];
 
@@ -86,9 +86,10 @@ export const TOP_UP = {
     "UPSA gives top-up students a new index number and a fresh CGPA. GradeIQ keeps each programme separately on the same account, so your diploma record is never lost or mixed with your degree.",
   points: [
     "Your diploma is kept as a completed programme with its final CGPA and class.",
-    "Your degree starts at Level 300 with its own CGPA from the first semester.",
+    "Your degree starts at Level 300 or Level 200, as set by your diploma FCGPA, with its own CGPA.",
     "Sign in with your email, your diploma index number or your degree index number.",
     "Created a second account for your top-up? Link it and your records move into one.",
+    "Download one transcript that covers both your diploma and your degree.",
   ],
   example: {
     label: "Example",
@@ -100,7 +101,7 @@ export const TOP_UP = {
     },
     degree: {
       title: "BSc Information Technology",
-      meta: "Current · starts at Level 300",
+      meta: "Current · Level 300 (FCGPA 2.50 or more)",
       cgpa: "Fresh CGPA",
       classLabel: "New index number",
     },
@@ -113,12 +114,12 @@ export const STEPS = [
     body: "Register with your index number, programme and level. Top-up students can record their diploma at the same time.",
   },
   {
-    title: "Enter your results",
-    body: "Add each course exactly as it appears on your result slip: code, title, credit hours and grade. No marks needed.",
+    title: "Add your semesters",
+    body: "Pick a semester and its usual courses are filled in for your programme. Tap the grade on your result slip for each course and save. No marks needed.",
   },
   {
-    title: "Act on what you see",
-    body: "Your GPA, CGPA and class update as soon as you save a result. Use your trends, warnings and target grade to plan the semester ahead.",
+    title: "Plan and act",
+    body: "Your GPA, CGPA, class and standing update straight away. Use the planner to see what each coming semester needs, and act before results come out.",
   },
 ];
 
@@ -150,11 +151,19 @@ export const FAQS = [
   },
   {
     q: "Who can see my results?",
-    a: "Only you. Administrators can see account details such as your name, email and index number, and anonymous totals for the platform, but not your grades or your CGPA.",
+    a: "Only you. Administrators can see account details such as your name, email and index number, and platform totals that do not identify anyone, but never your grades or your CGPA.",
   },
   {
-    q: "What if my course is not in the catalogue?",
-    a: "Enter it manually. The course catalogue only saves typing; it is not required.",
+    q: "Where do the pre-filled courses come from?",
+    a: "From UPSA's published teaching and examination timetables, and from courses other students on the same programme have entered (codes and titles only, never grades). Remove any you did not take, and type any course that is missing.",
+  },
+  {
+    q: "How do I get my official transcript?",
+    a: "Only UPSA's Academic Affairs Directorate issues official transcripts. The Transcript page in GradeIQ lists the current steps and links to UPSA's procedures page.",
+  },
+  {
+    q: "Can I delete my data?",
+    a: "Yes. From your Profile you can download every result as a spreadsheet file, or permanently delete your account and all your results.",
   },
   {
     q: "I forgot my password. What should I do?",
@@ -174,7 +183,7 @@ export const SUPPORT = {
 
 export const CLOSING = {
   title: "Start tracking before your next results come out.",
-  body: "Adding your results takes a few minutes. The earlier you know where you stand, the more time you have to improve it.",
+  body: "Adding a semester takes about a minute. The earlier you know where you stand, the more time you have to improve it.",
   cta: "Create an account",
 };
 
