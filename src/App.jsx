@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { TopProgress } from "./components/ui/Loading";
 import { Routes, Route, Navigate, Link } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { ProgrammeProvider } from "./context/ProgrammeContext";
@@ -63,12 +64,9 @@ function NotFound() {
   );
 }
 
+// Public pages: a thin gold bar while their code downloads
 function PageLoader() {
-  return (
-    <div className="min-h-screen bg-light-bg flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-navy border-t-gold rounded-full animate-spin" />
-    </div>
-  );
+  return <TopProgress />;
 }
 
 function AdminRoute({ children }) {

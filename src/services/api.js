@@ -1,3 +1,4 @@
+import { clearCache } from "../hooks/useCached";
 import axios from "axios";
 
 // ================================
@@ -55,6 +56,21 @@ API.interceptors.response.use(
 // FastAPI returns `detail` as a string for HTTPException
 // and as an array of objects for validation (422) errors
 // ================================
+
+// Any change (add, edit, delete) makes cached page data stale
+API.interceptors.response.use((response) => {
+  if (response.config.method && response.config.method.toLowerCase() !== "get") clearCache();
+  return response;
+});
+
+// The free server sleeps when idle. A cheap request as soon as the app opens
+// wakes it while the student is still reading or typing.
+let woken = false;
+export const wakeServer = () => {
+  if (woken) return;
+  woken = true;
+  fetch(`${API_BASE_URL}/health`, { mode: "cors" }).catch(() => {});
+};
 
 export const getErrorMessage = (error, fallback = "Something went wrong. Try again.") => {
   const detail = error?.response?.data?.detail;

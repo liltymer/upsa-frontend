@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../components/dashboard/dashboard.css";
 import Icon from "../components/landing/Icon";
@@ -6,6 +6,8 @@ import Help from "../components/dashboard/Help";
 import { GradeSpreadChart, TrendChart } from "../components/dashboard/charts";
 import { useAuth } from "../context/AuthContext";
 import { useProgrammes } from "../context/ProgrammeContext";
+import useCached from "../hooks/useCached";
+import { PageSkeleton } from "../components/ui/Loading";
 import { downloadTranscript, getActiveAnnouncements, getDashboard, getInsights, setAreaLabel } from "../services/api";
 import { classStyle } from "../utils/academic";
 import campusPhoto from "../assets/landing/campus-13-800.webp";
@@ -324,45 +326,25 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { selectedEnrollmentId, setSelectedId } = useProgrammes();
-  const [overview, setOverview] = useState(null);
-  const [insights, setInsights] = useState(null);
   const [announcements, setAnnouncements] = useState([]);
   const [remainingCredits, setRemainingCredits] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [tab, setTab] = useState("overview");
   const checklistKey = `gradeiq.checklistHidden.${user?.index_number || "me"}`;
   const [checklistHidden, setChecklistHidden] = useState(() => storageGet(checklistKey) === "1");
 
-  const load = useCallback(async () => {
-    setError("");
-    try {
-      const [dash, ins] = await Promise.all([
-        getDashboard(selectedEnrollmentId),
-        getInsights(selectedEnrollmentId, remainingCredits),
-      ]);
-      setOverview(dash);
-      setInsights(ins);
-    } catch {
-      setError("We could not load your dashboard. Check your connection and refresh the page.");
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedEnrollmentId, remainingCredits]);
-
-  useEffect(() => { load(); }, [load]);
+  // Shown instantly on a return visit, then refreshed in the background
+  const { data, error: loadError, reload } = useCached(
+    `dashboard:${selectedEnrollmentId || "current"}:${remainingCredits || ""}`,
+    () => Promise.all([getDashboard(selectedEnrollmentId), getInsights(selectedEnrollmentId, remainingCredits)]),
+    { keepPrevious: true },
+  );
+  const [overview, insights] = data || [];
+  const error = loadError ? "We could not load your dashboard. Check your connection and refresh the page." : "";
   useEffect(() => {
     getActiveAnnouncements().then(setAnnouncements).catch(() => setAnnouncements([]));
   }, []);
 
-  if (loading) {
-    return (
-      <div className="db db-loading" role="status">
-        <span className="db-spinner" aria-hidden="true" />
-        <p>Loading your dashboard...</p>
-      </div>
-    );
-  }
+  if (!data && !error) return <PageSkeleton variant="dashboard" label="Loading your dashboard" />;
 
   if (error || !overview || !insights) {
     return (
@@ -370,7 +352,7 @@ export default function Dashboard() {
         <div className="db-card db-error" role="alert">
           <Icon name="alert" size={22} />
           <p>{error || "Something went wrong."}</p>
-          <button type="button" className="db-btn" onClick={() => { setLoading(true); load(); }}>Try again</button>
+          <button type="button" className="db-btn" onClick={() => reload().catch(() => {})}>Try again</button>
         </div>
       </div>
     );
@@ -623,7 +605,7 @@ export default function Dashboard() {
                   </div>
                   <ul className="db-areas">
                     {insights.areas.map((a) => (
-                      <AreaRow key={a.area} area={a} cgpa={s.cgpa} enrollmentId={insights.enrollment_id} onSaved={load} />
+                      <AreaRow key={a.area} area={a} cgpa={s.cgpa} enrollmentId={insights.enrollment_id} onSaved={() => reload().catch(() => {})} />
                     ))}
                   </ul>
                   <p className="db-note"><span className="db-cgpa-mark" aria-hidden="true" /> marks your CGPA.</p>

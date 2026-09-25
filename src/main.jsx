@@ -4,6 +4,10 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import "./index.css";
+import { wakeServer } from "./services/api";
+
+// Start waking the free server before anyone presses a button
+wakeServer();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

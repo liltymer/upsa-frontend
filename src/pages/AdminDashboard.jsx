@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Icon from "../components/landing/Icon";
+import { PageSkeleton } from "../components/ui/Loading";
 import "../components/dashboard/dashboard.css";
 import "../components/results/results.css";
 import "../components/admin/admin.css";
@@ -62,7 +63,7 @@ export default function AdminDashboard() {
   }, []);
 
   if (error) return <div className="db rs"><div className="db-card rs-empty"><p className="rs-error" role="alert"><Icon name="alert" size={18} /> {error}</p></div></div>;
-  if (!stats || !analytics || !insights) return <div className="db db-loading"><div className="db-spinner" /><p>Loading the overview...</p></div>;
+  if (!stats || !analytics || !insights) return <PageSkeleton variant="summary" label="Loading the overview" />;
 
   const act = insights.activity;
   const withResults = analytics.total_analysed - analytics.standing.no_data;

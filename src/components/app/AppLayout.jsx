@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import "./app.css";
 import Icon from "../landing/Icon";
 import { useAuth } from "../../context/AuthContext";
 import { useProgrammes } from "../../context/ProgrammeContext";
+import { PageSkeleton, TopProgress } from "../ui/Loading";
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: "home", mobile: true },
@@ -188,7 +189,10 @@ export default function AppLayout() {
       </header>
 
       <main id="app-main" className="ap-main">
-        <Outlet />
+        {/* The sidebar stays while a page's code downloads */}
+        <Suspense fallback={<><TopProgress /><PageSkeleton /></>}>
+          <Outlet />
+        </Suspense>
       </main>
 
       {/* ---------- Phone bottom tabs ---------- */}

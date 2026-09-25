@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Icon from "../components/landing/Icon";
+import { PageSkeleton } from "../components/ui/Loading";
 import { Dialog, Menu, Toast } from "../components/results/ui";
 import "../components/dashboard/dashboard.css";
 import "../components/results/results.css";
@@ -69,7 +70,7 @@ export default function AdminUsers() {
   }, []);
 
   if (error && !users) return <div className="db rs"><div className="db-card rs-empty"><p className="rs-error" role="alert"><Icon name="alert" size={18} /> {error}</p></div></div>;
-  if (!users) return <div className="db db-loading"><div className="db-spinner" /><p>Loading accounts...</p></div>;
+  if (!users) return <PageSkeleton variant="list" label="Loading accounts" />;
 
   const isMe = (u) => u.index_number === me?.index_number && u.name === me?.name;
   const students = users.filter((u) => u.role === "student");
