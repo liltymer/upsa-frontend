@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Icon from "../components/landing/Icon";
+import { PageSkeleton } from "../components/ui/Loading";
+import useCached, { resultsKey } from "../hooks/useCached";
 import AddSemester from "../components/results/AddSemester";
 import CourseDialog from "../components/results/CourseDialog";
 import { Dialog, Menu, Toast } from "../components/results/ui";
@@ -26,9 +28,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 export default function Results() {
   const { selectedEnrollmentId, enrollments, refresh: refreshProgrammes } = useProgrammes();
   const { academic_years: academicYears, grade_scale: gradeScale } = useReferenceData();
-  const [data, setData] = useState(null);
   const [catalogue, setCatalogue] = useState([]);
-  const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [openKeys, setOpenKeys] = useState(null);
@@ -36,23 +36,9 @@ export default function Results() {
   const [toast, setToast] = useState(null);
   const clearToast = useCallback(() => setToast(null), []);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await getMyResults(selectedEnrollmentId);
-      setData(res);
-      setLoadError("");
-    } catch (err) {
-      setLoadError(getErrorMessage(err, "Could not load your results."));
-    }
-  }, [selectedEnrollmentId]);
-
-  useEffect(() => {
-    let active = true;
-    getMyResults(selectedEnrollmentId)
-      .then((res) => active && setData(res))
-      .catch((err) => active && setLoadError(getErrorMessage(err, "Could not load your results.")));
-    return () => { active = false; };
-  }, [selectedEnrollmentId]);
+  const { data, error: fetchError, reload } = useCached(resultsKey(selectedEnrollmentId), () => getMyResults(selectedEnrollmentId));
+  const loadError = fetchError ? getErrorMessage(fetchError, "Could not load your results.") : "";
+  const load = useCallback(() => reload().catch(() => {}), [reload]);
   useEffect(() => {
     getCourses().then(setCatalogue).catch(() => {
       // The course list only powers suggestions; typing still works without it
@@ -138,7 +124,7 @@ export default function Results() {
     );
   }
   if (!data) {
-    return <div className="db db-loading"><div className="db-spinner" /><p>Loading your results...</p></div>;
+    return <PageSkeleton variant="list" label="Loading your results" />;
   }
 
   // Search and grade filter

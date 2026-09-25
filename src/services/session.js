@@ -1,12 +1,15 @@
 import { loginStudent, getDashboard, getErrorMessage } from "./api";
+import { clearCache } from "../hooks/useCached";
 
 // Signs in, loads the profile summary the app keeps in AuthContext, and
 // returns it. A failure never leaves a half-finished session behind.
 export async function startSession(login, username, password) {
   try {
+    clearCache();
     const tokenData = await loginStudent(username, password);
     localStorage.setItem("token", tokenData.access_token);
-    const userData = await getDashboard();
+    // Newer servers send the summary with the token; older ones need a second request
+    const userData = tokenData.user || await getDashboard();
     login(tokenData.access_token, {
       name: userData.name,
       index_number: userData.index_number,

@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/landing/Icon";
+import { PageSkeleton } from "../components/ui/Loading";
+import useCached, { resultsKey } from "../hooks/useCached";
 import "../components/dashboard/dashboard.css";
 import "../components/results/results.css";
 import "../components/gpa/gpa.css";
@@ -49,16 +51,8 @@ function analyseCourses(results, semesters, awardType) {
 
 export default function Standing() {
   const { selectedEnrollmentId, enrollments } = useProgrammes();
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    getMyResults(selectedEnrollmentId)
-      .then((res) => { if (active) { setData(res); setError(""); } })
-      .catch((err) => active && setError(getErrorMessage(err, "Could not load your standing.")));
-    return () => { active = false; };
-  }, [selectedEnrollmentId]);
+  const { data, error: fetchError } = useCached(resultsKey(selectedEnrollmentId), () => getMyResults(selectedEnrollmentId));
+  const error = fetchError ? getErrorMessage(fetchError, "Could not load your standing.") : "";
 
   const enrollment = data?.enrollment;
   const courses = useMemo(
@@ -70,7 +64,7 @@ export default function Standing() {
     return <div className="db rs"><div className="db-card rs-empty"><p className="rs-error" role="alert"><Icon name="alert" size={18} /> {error}</p></div></div>;
   }
   if (!data) {
-    return <div className="db db-loading"><div className="db-spinner" /><p>Checking your standing...</p></div>;
+    return <PageSkeleton variant="summary" label="Checking your standing" />;
   }
 
   const header = (

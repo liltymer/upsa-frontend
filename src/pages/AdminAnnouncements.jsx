@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Icon from "../components/landing/Icon";
+import { PageSkeleton } from "../components/ui/Loading";
 import { Dialog, Menu, Toast } from "../components/results/ui";
 import "../components/dashboard/dashboard.css";
 import "../components/results/results.css";
@@ -43,7 +44,7 @@ export default function AdminAnnouncements() {
   };
 
   if (error && !items) return <div className="db rs"><div className="db-card rs-empty"><p className="rs-error" role="alert"><Icon name="alert" size={18} /> {error}</p></div></div>;
-  if (!items) return <div className="db db-loading"><div className="db-spinner" /><p>Loading announcements...</p></div>;
+  if (!items) return <PageSkeleton variant="list" label="Loading announcements" />;
 
   const showing = items.filter((a) => a.is_active).length;
 

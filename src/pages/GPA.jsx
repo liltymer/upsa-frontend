@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/landing/Icon";
+import { PageSkeleton } from "../components/ui/Loading";
+import useCached, { resultsKey } from "../hooks/useCached";
 import { TrendChart } from "../components/dashboard/charts";
 import "../components/dashboard/dashboard.css";
 import "../components/results/results.css";
@@ -16,17 +18,9 @@ const threeDp = (n) => (Math.floor(n * 1000 + 1e-9) / 1000).toFixed(3);
 export default function GPA() {
   const { selectedEnrollmentId } = useProgrammes();
   const { grade_scale: gradeScale } = useReferenceData();
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
+  const { data, error: fetchError } = useCached(resultsKey(selectedEnrollmentId), () => getMyResults(selectedEnrollmentId));
+  const error = fetchError ? getErrorMessage(fetchError, "Could not load your GPA.") : "";
   const [showWorking, setShowWorking] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    getMyResults(selectedEnrollmentId)
-      .then((res) => active && setData(res))
-      .catch((err) => active && setError(getErrorMessage(err, "Could not load your GPA.")));
-    return () => { active = false; };
-  }, [selectedEnrollmentId]);
 
   const semesters = useMemo(() => data?.semesters || [], [data]);
   const enrollment = data?.enrollment;
@@ -36,7 +30,7 @@ export default function GPA() {
     return <div className="db rs"><div className="db-card rs-empty"><p className="rs-error" role="alert"><Icon name="alert" size={18} /> {error}</p></div></div>;
   }
   if (!data) {
-    return <div className="db db-loading"><div className="db-spinner" /><p>Loading your GPA...</p></div>;
+    return <PageSkeleton variant="summary" label="Loading your GPA" />;
   }
 
   const header = (

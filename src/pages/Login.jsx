@@ -9,7 +9,11 @@ import { PasswordField } from "../components/auth/fields";
 // The API runs on a free instance that sleeps when idle; the first request can take up to a minute.
 const SLOW_AFTER_MS = 5000;
 
+// Download the dashboard while the student types, so it opens straight after signing in
+const preloadDashboard = () => import("./Dashboard");
+
 export default function Login() {
+  useEffect(() => { preloadDashboard(); }, []);
   const { login } = useAuth();
   const navigate = useNavigate();
   const justRegistered = Boolean(useLocation().state?.registered);

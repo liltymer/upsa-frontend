@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/landing/Icon";
+import { PageSkeleton } from "../components/ui/Loading";
 import { Toast } from "../components/results/ui";
 import "../components/dashboard/dashboard.css";
 import "../components/results/results.css";
@@ -163,7 +164,7 @@ export default function Transcript() {
           {error && !records && (
             <div className="db-card rs-empty"><p className="rs-error" role="alert"><Icon name="alert" size={18} /> {error}</p></div>
           )}
-          {!records && !error && <div className="db-card tp-loading"><div className="db-spinner" /><p>Loading your transcript...</p></div>}
+          {!records && !error && <PageSkeleton variant="document" label="Loading your transcript" />}
           {records?.length === 0 && (
             <section className="db-card rs-empty">
               <span className="rs-empty-icon"><Icon name="document" size={28} /></span>

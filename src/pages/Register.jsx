@@ -33,7 +33,11 @@ const EMPTY = {
   prev_programme: "", prev_index_number: "", prev_start_year: "",
 };
 
+// Download the dashboard while the student types, so it opens straight after signing in
+const preloadDashboard = () => import("./Dashboard");
+
 export default function Register() {
+  useEffect(() => { preloadDashboard(); }, []);
   const { login } = useAuth();
   const navigate = useNavigate();
   const {

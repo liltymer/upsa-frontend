@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/landing/Icon";
+import { PageSkeleton } from "../components/ui/Loading";
+import useCached, { resultsKey } from "../hooks/useCached";
 import { ProjectionChart } from "../components/dashboard/charts";
 import { GradePicker } from "../components/results/ui";
 import "../components/dashboard/dashboard.css";
@@ -57,9 +59,11 @@ const levelOf = (enrollment, year) =>
 export default function Planner() {
   const { selectedEnrollmentId } = useProgrammes();
   const { grade_scale: gradeScale, max_level: maxLevel } = useReferenceData();
-  const [data, setData] = useState(null);
-  const [areas, setAreas] = useState(null);
-  const [error, setError] = useState("");
+  const { data, error: fetchError } = useCached(resultsKey(selectedEnrollmentId), () => getMyResults(selectedEnrollmentId));
+  const error = fetchError ? getErrorMessage(fetchError, "Could not load your results.") : "";
+  const { data: areaData, error: areaError } = useCached(`areas:${selectedEnrollmentId || "current"}`,
+    () => getInsights(selectedEnrollmentId).then((ins) => ins.areas || []));
+  const areas = areaData || (areaError ? [] : null);
   const [plan, setPlan] = useState(null);
   const [target, setTarget] = useState(null);
   const [remaining, setRemaining] = useState("");
@@ -70,17 +74,6 @@ export default function Planner() {
   const stepDown = (g) => scale[Math.min(scale.findIndex((x) => x.grade === g) + 1, scale.length - 1)]?.grade || g;
   const stepUp = (g) => scale[Math.max(scale.findIndex((x) => x.grade === g) - 1, 0)]?.grade || g;
   const letterFor = (gp) => [...scale].reverse().find((g) => g.grade_point >= gp - 1e-9)?.grade;
-
-  useEffect(() => {
-    let active = true;
-    getMyResults(selectedEnrollmentId)
-      .then((res) => { if (active) { setData(res); setError(""); } })
-      .catch((err) => active && setError(getErrorMessage(err, "Could not load your results.")));
-    getInsights(selectedEnrollmentId)
-      .then((ins) => active && setAreas(ins.areas || []))
-      .catch(() => active && setAreas([]));
-    return () => { active = false; };
-  }, [selectedEnrollmentId]);
 
   const semesters = useMemo(() => data?.semesters || [], [data]);
   const enrollment = data?.enrollment;
@@ -144,7 +137,7 @@ export default function Planner() {
     return <div className="db rs"><div className="db-card rs-empty"><p className="rs-error" role="alert"><Icon name="alert" size={18} /> {error}</p></div></div>;
   }
   if (!data || !rows) {
-    return <div className="db db-loading"><div className="db-spinner" /><p>Preparing your plan...</p></div>;
+    return <PageSkeleton variant="form" label="Preparing your plan" />;
   }
 
   const bands = enrollment.classification_bands || [];

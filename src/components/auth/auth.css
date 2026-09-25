@@ -451,15 +451,31 @@
 }
 .au-submit:hover:not(:disabled) { background: #ffcd33; transform: translateY(-1px); box-shadow: 0 10px 24px rgba(255, 192, 5, 0.35); }
 .au-submit:disabled { opacity: 0.75; cursor: progress; }
+/* Three pulsing dots instead of a spinning circle */
 .au-spinner {
-  width: 18px;
-  height: 18px;
+  position: relative;
+  width: 6px;
+  height: 6px;
+  margin: 0 12px;
   border-radius: 50%;
-  border: 2.5px solid rgba(8, 28, 70, 0.25);
-  border-top-color: var(--navy);
-  animation: au-spin 0.8s linear infinite;
+  background: currentColor;
+  animation: au-dot 1s ease-in-out 0.15s infinite;
 }
-@keyframes au-spin { to { transform: rotate(360deg); } }
+.au-spinner::before,
+.au-spinner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: au-dot 1s ease-in-out infinite;
+}
+.au-spinner::before { left: -10px; }
+.au-spinner::after { left: 10px; animation-delay: 0.3s; }
+@keyframes au-dot { 0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .au-spinner, .au-spinner::before, .au-spinner::after { animation: none; opacity: 0.7; } }
 
 .au-divider {
   display: flex;

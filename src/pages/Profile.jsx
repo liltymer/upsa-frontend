@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../components/landing/Icon";
+import { PageSkeleton } from "../components/ui/Loading";
 import { PasswordField, PasswordStrength } from "../components/auth/fields";
 import { Dialog, Toast } from "../components/results/ui";
 import "../components/dashboard/dashboard.css";
@@ -177,7 +178,7 @@ export default function Profile() {
   };
 
   if (!profile) {
-    return <div className="db db-loading"><div className="db-spinner" /><p>Loading your profile...</p></div>;
+    return <PageSkeleton variant="form" label="Loading your profile" />;
   }
 
   const journey = [...enrollments].sort((a, b) => a.start_academic_year.localeCompare(b.start_academic_year) || a.entry_level - b.entry_level);
