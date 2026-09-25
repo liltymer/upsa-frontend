@@ -126,16 +126,16 @@ export default function App() {
           <Route path="/planner" element={<Planner />} />
           <Route path="/standing" element={<Standing />} />
           <Route path="/profile" element={<Profile />} />
+          {/* Admin pages share the same layout, behind the admin check */}
+          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+          <Route path="/admin/announcements" element={<AdminRoute><AdminAnnouncements /></AdminRoute>} />
+          <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
         </Route>
         {/* Old addresses keep working */}
         <Route path="/simulator" element={<Navigate to="/planner" replace />} />
         <Route path="/risk" element={<Navigate to="/standing" replace />} />
 
-        {/* Admin Routes */}
-        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-        <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-        <Route path="/admin/announcements" element={<AdminRoute><AdminAnnouncements /></AdminRoute>} />
-        <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
 
         {/* Password Reset Routes */}
         <Route path="/forgot-password" element={<ForgotPassword />} />

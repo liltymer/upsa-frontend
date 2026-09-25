@@ -14,6 +14,14 @@ const NAV_ITEMS = [
   { to: "/standing", label: "Standing", icon: "shield" },
 ];
 
+// Extra section for admin accounts
+const ADMIN_ITEMS = [
+  { to: "/admin", label: "Overview", icon: "chart", end: true },
+  { to: "/admin/users", label: "Students", icon: "user" },
+  { to: "/admin/courses", label: "Courses", icon: "layers" },
+  { to: "/admin/announcements", label: "Announcements", icon: "bell" },
+];
+
 const STORAGE_KEY = "gradeiq.sidebarCollapsed";
 
 const readCollapsed = () => {
@@ -137,6 +145,21 @@ export default function AppLayout() {
               </li>
             ))}
           </ul>
+          {user?.role === "admin" && (
+            <>
+              <p className="ap-nav-heading">{collapsed ? <span className="ap-nav-rule" aria-hidden="true" /> : "Admin"}</p>
+              <ul>
+                {ADMIN_ITEMS.map((item) => (
+                  <li key={item.to}>
+                    <NavLink to={item.to} end={item.end} className="ap-nav-link" title={collapsed ? `Admin: ${item.label}` : undefined}>
+                      <Icon name={item.icon} size={20} />
+                      <span className="ap-nav-label">{item.label}</span>
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </nav>
 
         <div className="ap-sidebar-bottom">
@@ -198,6 +221,12 @@ export default function AppLayout() {
               <Icon name="user" size={20} />
               <span>Profile</span>
             </NavLink>
+            {user?.role === "admin" && ADMIN_ITEMS.map((item) => (
+              <NavLink key={item.to} to={item.to} end={item.end} className="ap-more-link">
+                <Icon name={item.icon} size={20} />
+                <span>Admin: {item.label}</span>
+              </NavLink>
+            ))}
             <button type="button" className="ap-more-link" onClick={signOut}>
               <Icon name="logout" size={20} />
               <span>Sign out</span>
